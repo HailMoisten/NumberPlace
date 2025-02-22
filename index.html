@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+  <meta charset="UTF-8">
+  <title>Number Place</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico">
+  <style>
+    /* ---------------------------------------------------
+       Basic Layout, Fonts & Responsive Adjustments
+    --------------------------------------------------- */
+    body {
+      font-family: 'Lucida Sans', Helvetica, 'Noto Sans JP', Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden; /* Prevent vertical scrolling */
+      height: 100vh;
+    }
+    /* Common container styling for each screen */
+    #startScreen, #gameScreen, #resultScreen {
+      padding: 20px;
+    }
+    h1, h2 {
+      margin: 10px;
+      animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ---------------------------------------------------
+       Buttons
+    --------------------------------------------------- */
+    button {
+      font-family: 'Lucida Sans', Helvetica, 'Noto Sans JP', Arial, sans-serif;
+      margin: 5px;
+      padding: 8px 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s;
+      background-color: #555;
+      color: #fff;
+    }
+    button:hover {
+      background-color: #444;
+      transform: scale(1.05);
+    }
+    /* Fixed width for mode toggle so size remains constant */
+    #modeToggleBtn {
+      min-width: 150px;
+    }
+    
+    /* ---------------------------------------------------
+       Top Status Line – Displays Difficulty and Time
+    --------------------------------------------------- */
+    #statusLine {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    #difficultyDisplay { font-weight: bold; }
+    
+    /* ---------------------------------------------------
+       np Grid – Slightly smaller so the game screen fits in one view
+         (cells are 50x50px; 9 cells ≈ 450px plus borders)
+    --------------------------------------------------- */
+    #npGrid {
+      border-collapse: collapse;
+      margin: 0 auto 10px;
+    }
+    #npGrid td {
+      width: 50px;
+      height: 50px;
+      border: 1px solid #999;
+      position: relative;
+      vertical-align: middle;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    /* Thick borders for 3×3 blocks */
+    #npGrid tr:nth-child(3n+1) td { border-top: 3px solid #333; }
+    #npGrid tr td:nth-child(3n+1) { border-left: 3px solid #333; }
+    #npGrid tr:last-child td { border-bottom: 3px solid #333; }
+    #npGrid tr td:last-child { border-right: 3px solid #333; }
+    
+    /* ---------------------------------------------------
+       Cell Content – Main number & Candidate Notes
+    --------------------------------------------------- */
+    .cell-content {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .main-value {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+      font-weight: bold;
+      line-height: 50px;
+    }
+    .notes {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      pointer-events: none;
+      font-size: 12px;
+      color: #999;
+    }
+    .notes .note {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    /* Given cells styling */
+    td.given .main-value {
+      background-color: #eaeaea;
+      font-weight: bold;
+    }
+    /* Answered (user input) cells */
+    td.answered .main-value {
+      background-color: #fff;
+    }
+    /* Selected cell highlight */
+    td.selected {
+      outline: 2px solid #FF6600;
+      z-index: 1;
+    }
+    /* Correct answer flash */
+    td.correct {
+      animation: correctFlash 0.5s;
+    }
+    @keyframes correctFlash {
+      from { background-color: #b2fab4; }
+      to { background-color: transparent; }
+    }
+    /* Wrong answer flash */
+    td.wrong {
+      animation: wrongFlash 0.5s;
+    }
+    @keyframes wrongFlash {
+      from { background-color: #fbb; }
+      to { background-color: transparent; }
+    }
+    /* ---------------------------------------------------
+       Candidate Highlight Colors:
+         1 candidate: green tone,
+         2 candidates: yellow tone,
+         3 candidates: red tone.
+    --------------------------------------------------- */
+    td.cand1 { background-color: #d4edda !important; }
+    td.cand2 { background-color: #fff3cd !important; }
+    td.cand3 { background-color: #f8d7da !important; }
+    
+    /* ---------------------------------------------------
+       Number Buttons – Grid layout (below the np grid)
+         Adjusted to 50px to match cell size.
+    --------------------------------------------------- */
+    #numberButtons {
+      display: grid;
+      grid-template-columns: repeat(9, 50px);
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    
+    /* ---------------------------------------------------
+       Stats Panel – Styled similar to statusLine.
+         Displays only the numbers (without labels) in one line.
+         (Order: Points, correct count, mistakes, combo)
+    --------------------------------------------------- */
+    #statsPanel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    /* ---------------------------------------------------
+       Controls Panel – Contains Candidate Highlight, Mode Toggle, Give Up
+         Button texts include keyboard shortcut hints.
+    --------------------------------------------------- */
+    #controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    /* ---------------------------------------------------
+       Animations for Combo, Mistakes, Corrects & Points
+    --------------------------------------------------- */
+    .animate-combo {
+      animation: comboPulse 0.5s ease;
+    }
+    @keyframes comboPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .animate-mistake {
+      animation: mistakePulse 0.5s ease;
+    }
+    @keyframes mistakePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .animate-correct {
+      animation: correctPulse 0.5s ease;
+    }
+    @keyframes correctPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .animate-points {
+      animation: pointsPulse 0.5s ease;
+    }
+    @keyframes pointsPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    
+    /* ---------------------------------------------------
+       Result Overlay – Appears over game screen (dimmed background)
+    --------------------------------------------------- */
+    #resultScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    /* Result Card – Uses statsPanel-like styling for one-line stats,
+         then a signature area with heading. The result stats area (and replay button)
+         is half-transparent while the signature area remains opaque.
+    --------------------------------------------------- */
+    #resultCard {      
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      text-align: center;
+      font-size: 18px;
+      color: #333;
+      animation: fadeIn 0.5s ease;
+      max-width: 90%;
+    }
+    #resultDifficulty { 
+      font-size: 22px; 
+      font-weight: bold; 
+      margin-right: 10px; 
+    }
+    #resultScore { 
+      font-size: 28px; 
+      font-weight: bold; 
+      margin-left: 10px; 
+      margin-right: 20px; 
+    }
+    /* Result stats in one line using statsPanel styling */
+    #resultStats {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    /* Signature area: full white background with heading, width ~ grid width */
+    #signatureArea {
+      background: rgba(255, 255, 255, 0.3);
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      width: 450px;
+      max-width: 100%;
+    }
+    #signatureArea h3 {
+      margin: 0 0 5px 0;
+      font-size: 16px;
+      text-align: left;
+    }
+    
+    /* ---------------------------------------------------
+       Responsive Design Adjustments (for screens <=600px)
+    --------------------------------------------------- */
+    @media (max-width: 600px) {
+      #npGrid td {
+        width: 40px;
+        height: 40px;
+      }
+      .main-value {
+        font-size: 18px;
+        line-height: 40px;
+      }
+      .notes {
+        font-size: 7px;
+      }
+      #numberButtons {
+        grid-template-columns: repeat(9, 40px);
+      }
+      button, #modeToggleBtn {
+        font-size: 14px;
+        padding: 6px 10px;
+      }
+      #statusLine, #statsPanel, #resultStats {
+        font-size: 16px;
+      }
+      #signatureArea {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Start Screen: Difficulty Selection with key assignments (1,2,3,4,5) -->
+  <div id="startScreen">
+    <h1>Number Place</h1>
+    <p>Select Difficulty</p>
+    <button id="superEasyBtn" style="background-color: #306061;">Super Easy 10 (1)</button>
+    <button id="easyBtn" style="background-color: #30613b;">Easy 20 (2)</button>
+    <button id="mediumBtn" style="background-color: #74663a;">Medium 30 (3)</button>
+    <button id="hardBtn" style="background-color: #613030;">Hard 40 (4)</button>
+    <button id="ultraHardBtn" style="background-color: #60306b;">Ultra Hard 50 (5)</button>
+  </div>
+  
+  <!-- Game Screen -->
+  <div id="gameScreen" style="display:none;">
+    <!-- Top Status Line: Difficulty and Time -->
+    <div id="statusLine">
+      <span id="difficultyDisplay"></span>
+      <span id="timeDisplay">00:00</span>
+    </div>
+    <!-- np Grid -->
+    <table id="npGrid"></table>
+    <!-- Number Buttons (1-9) -->
+    <div id="numberButtons"></div>
+    <!-- Stats Panel: Displays numbers only: Points, correct count, mistakes, combo -->
+    <div id="statsPanel">
+      <span id="pointsDisplay">1 pt</span>
+      <span id="correctsDisplay">○ 0</span>
+      <span id="mistakesDisplay">× 0</span>
+      <span id="comboDisplay">0 combo</span>
+    </div>
+    <!-- Controls Panel: Candidate Highlight, Mode Toggle, Give Up -->
+    <div id="controls">
+      <button id="highlightBtn">Candidate Highlight (h): 0 pt</button>
+      <button id="modeToggleBtn">Answer (a) / <b>Memo (m)</b></button>
+      <button id="giveUpBtn">Give up(Esc) -1 pt</button>
+    </div>
+  </div>
+  
+  <!-- Result Overlay (over game screen, which remains dimmed) -->
+  <div id="resultScreen" style="display:none;">
+    <div id="resultCard">
+      <span id="resultDifficulty"></span>
+      <strong>Score </strong><span id="resultScore"></span>
+      <button id="restartBtn">Replay (Esc)</button>
+      <!-- Result Stats in one line using statsPanel styling -->
+      <div id="resultStats">
+        <span id="resultTime"></span>
+        <span id="resultPoints"></span>
+        <span id="resultCorrects"></span>
+        <span id="resultMistakes"></span>
+        <span id="resultCombo"></span>
+      </div>
+      <!-- Signature Area with heading -->
+      <div id="signatureArea">
+        <h3>Signature</h3>
+        <canvas id="signatureCanvas" width="450" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    /********************************************
+     * Global Variables
+    ********************************************/
+    let board = [];           // Current board (9x9 array)
+    let solution = [];        // Complete solution board
+    let givenPuzzle = [];     // Initial puzzle (given cells)
+    let selectedCell = null;  // Currently selected cell (<td> element)
+    let timerInterval = null; // Timer interval
+    let startTime;            // Game start time
+    let mistakeCount = 0;     // Number of mistakes
+    let correctCount = 0;     // Count of correctly answered cells
+    let comboCount = 0;       // Combo count for consecutive correct answers
+    let currentDifficulty = 'easy'; // "superEasy", "easy", "medium", "hard", "ultraHard"
+    let candidateHighlightLevel = 0;  // 0 ~ 3 (current candidate highlight level)
+    let isNoteMode = false;   // false: Answer mode, true: Memo mode
+    let points = 1;           // Starting points
+    let difficultyColor = "#000"; // Will store the selected button color
+    let diffText = "";        // Difficulty label text
+    
+    /********************************************
+     * Utility: Deep Copy an Array
+    ********************************************/
+    function deepCopy(arr) {
+      return arr.map(row => row.slice());
+    }
+    
+    /********************************************
+     * Generate a complete np board (backtracking)
+    ********************************************/
+    function generateCompleteBoard() {
+      let board = Array.from({ length: 9 }, () => Array(9).fill(0));
+      function isValid(board, r, c, num) {
+        for (let i = 0; i < 9; i++) {
+          if (board[r][i] === num || board[i][c] === num) return false;
+        }
+        const boxRow = Math.floor(r / 3) * 3;
+        const boxCol = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[boxRow + i][boxCol + j] === num) return false;
+          }
+        }
+        return true;
+      }
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+      function solve(cell = 0) {
+        if (cell === 81) return true;
+        const r = Math.floor(cell / 9);
+        const c = cell % 9;
+        if (board[r][c] !== 0) return solve(cell + 1);
+        let nums = shuffle([1,2,3,4,5,6,7,8,9]);
+        for (let num of nums) {
+          if (isValid(board, r, c, num)) {
+            board[r][c] = num;
+            if (solve(cell + 1)) return true;
+            board[r][c] = 0;
+          }
+        }
+        return false;
+      }
+      solve();
+      return board;
+    }
+    
+    /********************************************
+     * Create Puzzle: Remove cells based on difficulty
+         Super Easy: remove 10, Easy: remove 20, Medium: remove 30, Hard: remove 40, Ultra Hard: remove 50
+    ********************************************/
+    function createPuzzle(fullBoard, difficulty) {
+      let puzzle = deepCopy(fullBoard);
+      let cellsToRemove;
+      if (difficulty === 'superEasy') {
+        cellsToRemove = 10;
+      } else if (difficulty === 'easy') {
+        cellsToRemove = 20;
+      } else if (difficulty === 'medium') {
+        cellsToRemove = 30;
+      } else if (difficulty === 'hard') {
+        cellsToRemove = 40;
+      } else if (difficulty === 'ultraHard') {
+        cellsToRemove = 50;
+      }
+      while (cellsToRemove > 0) {
+        const r = Math.floor(Math.random() * 9);
+        const c = Math.floor(Math.random() * 9);
+        if (puzzle[r][c] !== 0) {
+          puzzle[r][c] = 0;
+          cellsToRemove--;
+        }
+      }
+      return puzzle;
+    }
+    
+    /********************************************
+     * Render the np Grid.
+         Each cell contains a .cell-content div with .main-value and .notes.
+         After rendering, automatically select the cell at (5,5) (i.e. row4, col4 in 0-indexed).
+    ********************************************/
+    function renderGrid() {
+      const grid = document.getElementById('npGrid');
+      grid.innerHTML = '';
+      for (let r = 0; r < 9; r++) {
+        const rowElem = document.createElement('tr');
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('td');
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          // Initialize memo note set for this cell
+          cell.noteSet = new Set();
+          const cellContent = document.createElement('div');
+          cellContent.classList.add('cell-content');
+          const mainValue = document.createElement('div');
+          mainValue.classList.add('main-value');
+          if (givenPuzzle[r][c] !== 0) {
+            mainValue.textContent = givenPuzzle[r][c];
+          }
+          const notesDiv = document.createElement('div');
+          notesDiv.classList.add('notes');
+          cellContent.appendChild(mainValue);
+          cellContent.appendChild(notesDiv);
+          cell.appendChild(cellContent);
+          if (givenPuzzle[r][c] !== 0) {
+            cell.classList.add('given');
+          }
+          cell.addEventListener('click', onCellClick);
+          rowElem.appendChild(cell);
+        }
+        grid.appendChild(rowElem);
+      }
+      // Automatically select cell at (5,5) → row index 4, col index 4 (0-indexed)
+      let cell55 = document.querySelector('#npGrid td[data-row="4"][data-col="4"]');
+      if (cell55) {
+        selectedCell = cell55;
+        selectedCell.classList.add('selected');
+      }
+    }
+    
+    /********************************************
+     * Render Number Buttons (1 to 9) in a grid.
+    ********************************************/
+    function renderNumberButtons() {
+      const container = document.getElementById('numberButtons');
+      container.innerHTML = '';
+      for (let i = 1; i <= 9; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.dataset.number = i;
+        btn.addEventListener('click', () => onNumberInput(parseInt(btn.dataset.number)));
+        container.appendChild(btn);
+      }
+    }
+    
+    /********************************************
+     * Cell Click Handler – All cells are selectable.
+    ********************************************/
+    function onCellClick(e) {
+      if (selectedCell) {
+        selectedCell.classList.remove('selected');
+      }
+      selectedCell = e.currentTarget;
+      selectedCell.classList.add('selected');
+    }
+    
+    /********************************************
+     * Number Input Handler – Called when a number is input.
+         In Memo mode: if cell.noteSet is empty, initialize with 1–9; then toggle the pressed number.
+         In Answer mode: check answer; if correct, add bonus (number of candidates) to points (multiplied by combo),
+         animate points, combo, correct count, and reset candidate highlights.
+    ********************************************/
+    function onNumberInput(num) {
+      if (!selectedCell) return;
+      const r = parseInt(selectedCell.dataset.row);
+      const c = parseInt(selectedCell.dataset.col);
+      // Ignore input if cell already answered (or given)
+      if (board[r][c] !== 0) return;
+      const mainValueElem = selectedCell.querySelector('.main-value');
+      const notesElem = selectedCell.querySelector('.notes');
+      
+      if (isNoteMode) {
+        // Memo mode: if noteSet is empty, initialize with 1–9 first
+        if (selectedCell.noteSet.size === 0) {
+          for (let i = 1; i <= 9; i++) {
+            selectedCell.noteSet.add(i);
+          }
+        }
+        // Toggle the pressed number in noteSet
+        if (selectedCell.noteSet.has(num)) {
+          selectedCell.noteSet.delete(num);
+        } else {
+          selectedCell.noteSet.add(num);
+        }
+        updateCellNotes(selectedCell);
+      } else {
+        // Answer mode: check if answer is correct
+        if (solution[r][c] === num) {
+          // Bonus equals the number of valid candidate numbers for this cell
+          let bonus = getCandidates(r, c).length;
+          board[r][c] = num;
+          mainValueElem.textContent = num;
+          selectedCell.classList.add('correct');
+          selectedCell.classList.add('answered');
+          // Increase points by bonus multiplied by current combo count
+          points += bonus * (comboCount + 1);
+          showPointBonus(bonus);
+          correctCount++;
+          comboCount++;
+          const comboDisplay = document.getElementById('comboDisplay');
+          comboDisplay.classList.add('animate-combo');
+          setTimeout(() => comboDisplay.classList.remove('animate-combo'), 500);
+          // Reset candidate highlights
+          clearCandidateHighlights();
+          candidateHighlightLevel = 0;
+          document.getElementById('highlightBtn').textContent = 'Candidate Highlight (h): 0 pt';
+          // Clear memo notes on this cell
+          selectedCell.noteSet.clear();
+          notesElem.innerHTML = '';
+          updateStats();
+          // Keep cell selected (focus remains)
+          if (isBoardComplete()) {
+            clearInterval(timerInterval);
+            showResult();
+          }
+        } else {
+          // Wrong answer: update mistake count, reset combo, animate mistake
+          mistakeCount++;
+          comboCount = 0;
+          const mistakesDisplay = document.getElementById('mistakesDisplay');
+          mistakesDisplay.classList.add('animate-mistake');
+          setTimeout(() => mistakesDisplay.classList.remove('animate-mistake'), 500);
+          updateStats();
+          selectedCell.classList.add('wrong');
+          const candidates = getCandidates(r, c);
+          updateCellNotesWithCandidates(selectedCell, candidates);
+          setTimeout(() => selectedCell.classList.remove('wrong'), 500);
+        }
+      }
+    }
+    
+    /********************************************
+     * Update a cell's memo notes display (Memo mode).
+    ********************************************/
+    function updateCellNotes(cell) {
+      const notesElem = cell.querySelector('.notes');
+      notesElem.innerHTML = '';
+      const notesArray = Array.from(cell.noteSet).sort((a, b) => a - b);
+      notesArray.forEach(n => {
+        const noteDiv = document.createElement('div');
+        noteDiv.classList.add('note');
+        noteDiv.style.gridColumnStart = ((n - 1) % 3) + 1;
+        noteDiv.style.gridRowStart = Math.floor((n - 1) / 3) + 1;
+        noteDiv.textContent = n;
+        notesElem.appendChild(noteDiv);
+      });
+    }
+    
+    /********************************************
+     * Update a cell's notes with valid candidate numbers (on wrong answer).
+    ********************************************/
+    function updateCellNotesWithCandidates(cell, candidates) {
+      const notesElem = cell.querySelector('.notes');
+      notesElem.innerHTML = '';
+      candidates.forEach(n => {
+        const noteDiv = document.createElement('div');
+        noteDiv.classList.add('note');
+        noteDiv.style.gridColumnStart = ((n - 1) % 3) + 1;
+        noteDiv.style.gridRowStart = Math.floor((n - 1) / 3) + 1;
+        noteDiv.textContent = n;
+        notesElem.appendChild(noteDiv);
+      });
+    }
+    
+    /********************************************
+     * Clear candidate highlights on all cells.
+    ********************************************/
+    function clearCandidateHighlights() {
+      document.querySelectorAll('#npGrid td').forEach(cell => {
+        cell.classList.remove('cand1','cand2','cand3');
+      });
+    }
+    
+    /********************************************
+     * Update candidate highlights:
+         For each cell, if valid candidate count ≤ candidateHighlightLevel, add corresponding class.
+    ********************************************/
+    function updateCandidateHighlights() {
+      document.querySelectorAll('#npGrid td').forEach(cell => {
+        const r = parseInt(cell.dataset.row);
+        const c = parseInt(cell.dataset.col);
+        if (board[r][c] !== 0) {
+          cell.classList.remove('cand1','cand2','cand3');
+          return;
+        }
+        const candidates = getCandidates(r, c);
+        cell.classList.remove('cand1','cand2','cand3');
+        if (candidates.length > 0 && candidates.length <= candidateHighlightLevel) {
+          cell.classList.add('cand' + candidates.length);
+        }
+      });
+      document.getElementById('highlightBtn').textContent = 'Candidate Highlight (h): ' + candidateHighlightLevel + ' pt';
+    }
+    
+    /********************************************
+     * Check if placing num at board[r][c] is valid.
+    ********************************************/
+    function isValidForCell(board, r, c, num) {
+      for (let i = 0; i < 9; i++) {
+        if (board[r][i] === num || board[i][c] === num) return false;
+      }
+      const boxRow = Math.floor(r / 3) * 3;
+      const boxCol = Math.floor(c / 3) * 3;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (board[boxRow + i][boxCol + j] === num) return false;
+        }
+      }
+      return true;
+    }
+    
+    /********************************************
+     * Get valid candidate numbers for cell [r][c].
+    ********************************************/
+    function getCandidates(r, c) {
+      let candidates = [];
+      if (board[r][c] !== 0) return candidates;
+      for (let num = 1; num <= 9; num++) {
+        if (isValidForCell(board, r, c, num)) {
+          candidates.push(num);
+        }
+      }
+      return candidates;
+    }
+    
+    /********************************************
+     * Timer update: Display elapsed time in mm:ss.
+    ********************************************/
+    function updateTimer() {
+      const now = new Date();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      document.getElementById('timeDisplay').textContent = m + ':' + s;
+    }
+    
+    /********************************************
+     * Start Timer.
+    ********************************************/
+    function startTimer() {
+      startTime = new Date();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+    
+    /********************************************
+     * Check if the board is completely filled.
+    ********************************************/
+    function isBoardComplete() {
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (board[r][c] === 0) return false;
+        }
+      }
+      return true;
+    }
+    
+    /********************************************
+     * Update Stats Panel: (Points, correct count, mistakes, combo) – numbers only.
+    ********************************************/
+    function updateStats() {
+      document.getElementById('pointsDisplay').textContent = points + " pt";
+      document.getElementById('mistakesDisplay').textContent = "× " + mistakeCount;
+      document.getElementById('correctsDisplay').textContent = "○ " + correctCount;
+      document.getElementById('comboDisplay').textContent = comboCount + " combo";
+    }
+    
+    /********************************************
+     * Show bonus point animation (e.g., "+n pt") near points display.
+    ********************************************/
+    function showPointBonus(bonus) {
+      if (bonus <= 0) return;
+      const bonusElem = document.createElement('span');
+      bonusElem.textContent = " + " + bonus + " pt";
+      bonusElem.style.position = "absolute";
+      bonusElem.style.color = "#28a745";
+      bonusElem.style.fontSize = "18px";
+      bonusElem.style.fontWeight = "bold";
+      const pointsDisplay = document.getElementById('pointsDisplay');
+      const rect = pointsDisplay.getBoundingClientRect();
+      bonusElem.style.left = rect.right + "px";
+      bonusElem.style.top = rect.top + "px";
+      document.body.appendChild(bonusElem);
+      bonusElem.style.transition = "opacity 1.5s ease";
+      setTimeout(() => { bonusElem.style.opacity = "0"; }, 100);
+      setTimeout(() => { document.body.removeChild(bonusElem); }, 1600);
+      updateStats();
+    }
+    
+    /********************************************
+     * Initialize Game: Generate board, reset counts, render grid & buttons.
+         Also, update difficulty display with the chosen color.
+    ********************************************/
+    function initGame(difficulty) {
+      currentDifficulty = difficulty;
+      solution = generateCompleteBoard();
+      givenPuzzle = createPuzzle(solution, difficulty);
+      board = deepCopy(givenPuzzle);
+      mistakeCount = 0;
+      correctCount = 0;
+      comboCount = 0;
+      candidateHighlightLevel = 0;
+      points = 1;
+      updateStats();
+      // Set diffText based on difficulty
+      if (difficulty === 'superEasy') {
+        diffText = "Super Easy 10";
+      } else if (difficulty === 'easy') {
+        diffText = "Easy 20";
+      } else if (difficulty === 'medium') {
+        diffText = "Medium 30";
+      } else if (difficulty === 'hard') {
+        diffText = "Hard 40";
+      } else if (difficulty === 'ultraHard') {
+        diffText = "Ultra Hard 50";
+      }
+      // Update difficulty display with chosen color
+      document.getElementById('difficultyDisplay').innerHTML = "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+      renderGrid();
+      renderNumberButtons();
+      clearCandidateHighlights();
+      startTimer();
+    }
+    
+    /********************************************
+     * Show Result Overlay:
+         The game screen remains visible (dimmed), and the result overlay appears on top.
+         Result stats are displayed in one line and include Time, Points, correct count, mistakes, and combo.
+         A signature area with a heading is shown below.
+         The difficulty text in result is also colored with the chosen button color.
+    ********************************************/
+    function showResult() {
+      clearInterval(timerInterval);
+      // Update difficulty text in result with same color
+      document.getElementById('resultDifficulty').innerHTML = "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+      const elapsed = Math.floor((new Date() - startTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      // Example score calculation (you can adjust as needed)
+      const score = Math.round(points * 60/(Math.floor(elapsed / 60)*60 + (Math.floor(elapsed % 60))||1) * (1 - (mistakeCount/(correctCount||1))));
+      document.getElementById('resultScore').innerHTML = "<span>" + score + "</span>";
+      const resultStats = document.getElementById('resultStats');
+      resultStats.innerHTML = 
+        "<span>" + m + ":" + s + "</span>" +
+        "<span>" + points + " pt</span>" +
+        "<span>○ " + correctCount + "</span>" +
+        "<span>× " + mistakeCount + "</span>" +
+        "<span>" + comboCount + " combo</span>";
+      document.getElementById('resultScreen').style.display = "flex";
+    }
+    
+    /********************************************
+     * "Give up" Button – Show result overlay immediately.
+    ********************************************/
+    document.getElementById('giveUpBtn').addEventListener('click', function(){
+      clearInterval(timerInterval);
+      points--;
+      showResult();
+    });
+    
+    /********************************************
+     * "Replay" Button on Result Overlay –
+         Returns to the Start Screen with no leftover board.
+    ********************************************/
+    document.getElementById('restartBtn').addEventListener('click', function(){
+      document.getElementById('resultScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "none";
+      document.getElementById('startScreen').style.display = "block";
+      document.getElementById('npGrid').innerHTML = "";
+    });
+    
+    /********************************************
+     * Keyboard Input:
+         - On Start Screen: keys 1,2,3,4,5 select difficulties.
+         - On Result Screen: Esc triggers Replay.
+         - In Game Screen:
+             h → highlight button,
+             if in Memo mode, a → switch to Answer mode;
+             if in Answer mode, m → switch to Memo mode,
+             Esc → Give up.
+             Arrow keys for cell movement, 1–9 for number input.
+    ********************************************/
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('startScreen').style.display !== "none") {
+        if (e.key === "1") { document.getElementById('superEasyBtn').click(); return; }
+        if (e.key === "2") { document.getElementById('easyBtn').click(); return; }
+        if (e.key === "3") { document.getElementById('mediumBtn').click(); return; }
+        if (e.key === "4") { document.getElementById('hardBtn').click(); return; }
+        if (e.key === "5") { document.getElementById('ultraHardBtn').click(); return; }
+      }
+      if (document.getElementById('resultScreen').style.display !== "none") {
+        if (e.key === "Escape") { document.getElementById('restartBtn').click(); return; }
+      }
+      if (document.getElementById('gameScreen').style.display !== "none") {
+        if (e.key.toLowerCase() === "h") { 
+          document.getElementById('highlightBtn').click(); 
+          return; 
+        }
+        if (isNoteMode && e.key.toLowerCase() === "a") { 
+          isNoteMode = false; 
+          updateModeButton(); 
+          return; 
+        }
+        if (!isNoteMode && e.key.toLowerCase() === "m") { 
+          isNoteMode = true; 
+          updateModeButton(); 
+          return; 
+        }
+        if (e.key === "Escape") { 
+          document.getElementById('giveUpBtn').click(); 
+          return; 
+        }
+        if (!selectedCell) return;
+        const r = parseInt(selectedCell.dataset.row);
+        const c = parseInt(selectedCell.dataset.col);
+        let newR = r, newC = c;
+        switch(e.key) {
+          case "ArrowUp": newR = (r > 0) ? r - 1 : r; break;
+          case "ArrowDown": newR = (r < 8) ? r + 1 : r; break;
+          case "ArrowLeft": newC = (c > 0) ? c - 1 : c; break;
+          case "ArrowRight": newC = (c < 8) ? c + 1 : c; break;
+          default:
+            if (/^[1-9]$/.test(e.key)) {
+              onNumberInput(parseInt(e.key));
+            }
+            return;
+        }
+        const newCell = document.querySelector(`#npGrid td[data-row="${newR}"][data-col="${newC}"]`);
+        if (newCell) {
+          if (selectedCell) selectedCell.classList.remove('selected');
+          selectedCell = newCell;
+          selectedCell.classList.add('selected');
+        }
+      }
+    });
+    
+    /********************************************
+     * Candidate Highlight Button:
+         Increases highlight level from 0 to 1, 1 to 2, 2 to 3.
+         Each increase costs 1 pt; if points are 0, do nothing.
+         (Cannot cycle from 3 back to 0 via button.)
+    ********************************************/
+    document.getElementById('highlightBtn').addEventListener('click', () => {
+      if (candidateHighlightLevel < 3 && points > 0) {
+        points--;
+        candidateHighlightLevel++;
+        updateCandidateHighlights();
+        updateStats();
+      }
+    });
+    
+    /********************************************
+     * Mode Toggle Button:
+         Toggle between Answer and Memo modes.
+         Button text is fixed as "Answer (a) / Memo (m)" with the current mode part emphasized.
+    ********************************************/
+    function updateModeButton() {
+      const btn = document.getElementById('modeToggleBtn');
+      if (isNoteMode) {
+        btn.innerHTML = "Answer (a) / <b>Memo (m)</b>";
+      } else {
+        btn.innerHTML = "<b>Answer (a)</b> / Memo (m)";
+      }
+    }
+    document.getElementById('modeToggleBtn').addEventListener('click', function(){
+      isNoteMode = !isNoteMode;
+      updateModeButton();
+    });
+    updateModeButton();
+    
+    /********************************************
+     * Start Screen Difficulty Buttons – with key assignments.
+         Also, set the difficultyColor from the button's background color.
+    ********************************************/
+    document.getElementById('superEasyBtn').addEventListener('click', function(){
+      difficultyColor = this.style.backgroundColor;
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "block";
+      initGame('superEasy');
+    });
+    document.getElementById('easyBtn').addEventListener('click', function(){
+      difficultyColor = this.style.backgroundColor;
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "block";
+      initGame('easy');
+    });
+    document.getElementById('mediumBtn').addEventListener('click', function(){
+      difficultyColor = this.style.backgroundColor;
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "block";
+      initGame('medium');
+    });
+    document.getElementById('hardBtn').addEventListener('click', function(){
+      difficultyColor = this.style.backgroundColor;
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "block";
+      initGame('hard');
+    });
+    document.getElementById('ultraHardBtn').addEventListener('click', function(){
+      difficultyColor = this.style.backgroundColor;
+      document.getElementById('startScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "block";
+      initGame('ultraHard');
+    });
+    
+    /********************************************
+     * Signature Canvas Setup (for Result Screen)
+         Allows drawing with a thin black pen.
+    ********************************************/
+    const signatureCanvas = document.getElementById('signatureCanvas');
+    const sigCtx = signatureCanvas.getContext('2d');
+    let drawing = false;
+    let lastX = 0, lastY = 0;
+    
+    function drawLine(x, y, isDown) {
+      if (!isDown) return;
+      sigCtx.beginPath();
+      sigCtx.strokeStyle = "#000";
+      sigCtx.lineWidth = 1;
+      sigCtx.lineCap = "round";
+      sigCtx.moveTo(lastX, lastY);
+      sigCtx.lineTo(x, y);
+      sigCtx.stroke();
+      sigCtx.closePath();
+      lastX = x;
+      lastY = y;
+    }
+    
+    signatureCanvas.addEventListener('mousedown', (e) => {
+      drawing = true;
+      const rect = signatureCanvas.getBoundingClientRect();
+      lastX = e.clientX - rect.left;
+      lastY = e.clientY - rect.top;
+    });
+    signatureCanvas.addEventListener('mousemove', (e) => {
+      if (!drawing) return;
+      const rect = signatureCanvas.getBoundingClientRect();
+      drawLine(e.clientX - rect.left, e.clientY - rect.top, true);
+    });
+    signatureCanvas.addEventListener('mouseup', () => drawing = false);
+    signatureCanvas.addEventListener('mouseout', () => drawing = false);
+    // Touch events for mobile
+    signatureCanvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      drawing = true;
+      const rect = signatureCanvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      lastX = touch.clientX - rect.left;
+      lastY = touch.clientY - rect.top;
+    });
+    signatureCanvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!drawing) return;
+      const rect = signatureCanvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      drawLine(touch.clientX - rect.left, touch.clientY - rect.top, true);
+    });
+    signatureCanvas.addEventListener('touchend', () => drawing = false);
+  </script>
+</body>
+</html>
