@@ -859,6 +859,9 @@
      * "Replay" Button – Return to Start Screen.
     ********************************************/
     document.getElementById('restartBtn').addEventListener('click', function(){
+      const signatureCanvas = document.getElementById('signatureCanvas');
+      const sigCtx = signatureCanvas.getContext('2d');
+      sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
       document.getElementById('resultScreen').style.display = "none";
       document.getElementById('gameScreen').style.display = "none";
       document.getElementById('startScreen').style.display = "block";
