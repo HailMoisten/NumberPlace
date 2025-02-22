@@ -25,7 +25,7 @@
       padding: 0;
       text-align: center;
       position: relative;
-      overflow: hidden; /* Prevent vertical scrolling */
+      /* overflow: hidden; Prevent vertical scrolling */
       height: 100vh;
     }
     /* Common container styling for each screen */
@@ -86,8 +86,12 @@
       margin: 0 auto 10px;
     }
     #npGrid td {
-      width: 50px;
-      height: 50px;
+      width: 8vmin;
+      height: 8vmin;
+      aspect-ratio: 1;
+      max-width: 70px;
+      max-height: 70px;
+      aspect-ratio: 1;
       border: 1px solid #999;
       position: relative;
       vertical-align: middle;
@@ -128,7 +132,7 @@
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
       pointer-events: none;
-      font-size: 12px;
+      font-size: 14px;
       color: #999;
     }
     .notes .note {
@@ -317,11 +321,12 @@
     --------------------------------------------------- */
     @media (max-width: 600px) {
       #npGrid td {
-        width: 60px;
-        height: 60px;
+        width: 8vmin;
+        height: 8vmin;
+        aspect-ratio: 1;
       }
       .main-value {
-        font-size: 26px;
+        font-size: 22px;
         /* 行の高さはflexで中央揃えのため不要 */
       }
       .notes {
@@ -330,10 +335,9 @@
       #numberButtons {
         grid-template-columns: repeat(9, 11%);
         max-width: 450px;
-        height: 60px;
       }
       button, #modeToggleBtn {
-        font-size: 18px;
+        font-size: 14px;
         padding: 10px 14px;
       }
       #statusLine, #statsPanel, #resultStats {
@@ -554,8 +558,8 @@
         btn.style.margin = '2px';
         btn.style.paddingLeft = '0px';
         btn.style.paddingRight = '0px';
-        btn.style.paddingTop = '16px';
-        btn.style.paddingBottom = '16px';
+        btn.style.paddingTop = '12px';
+        btn.style.paddingBottom = '12px';
         btn.style.fontWeight = 'Bold';
         btn.textContent = i;
         btn.dataset.number = i;
@@ -787,7 +791,7 @@
       const pointsDisplay = document.getElementById('pointsDisplay');
       const rect = pointsDisplay.getBoundingClientRect();
       bonusElem.style.left = (rect.left + rect.width/2) + "px";
-      bonusElem.style.top = rect.top + "px";
+      bonusElem.style.top = rect.top + 4 + "px";
       bonusElem.style.transform = "translate(-50%, -110%)";
       document.body.appendChild(bonusElem);
       bonusElem.style.transition = "opacity 1.5s ease, transform 1.5s ease";
