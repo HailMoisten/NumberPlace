@@ -357,6 +357,7 @@
     <button id="mediumBtn" style="background-color: #74663a;">Medium 30 (3)</button>
     <button id="hardBtn" style="background-color: #613030;">Hard 40 (4)</button>
     <button id="ultraHardBtn" style="background-color: #60306b;">Ultra Hard 50 (5)</button>
+    <button id="extremeHardBtn" style="background-color: #391921;">Extreme Hard 55 (6)</button>
   </div>
   
   <!-- Game Screen -->
@@ -432,7 +433,8 @@
       easy: { cells: 20, label: "Easy 20" },
       medium: { cells: 30, label: "Medium 30" },
       hard: { cells: 40, label: "Hard 40" },
-      ultraHard: { cells: 50, label: "Ultra Hard 50" }
+      ultraHard: { cells: 50, label: "Ultra Hard 50" },
+      extremeHard: { cells: 55, label: "Extreme Hard 55" }
     };
     
     /********************************************
@@ -492,6 +494,7 @@
     function createPuzzle(fullBoard, difficulty) {
       let puzzle = deepCopy(fullBoard);
       let cellsToRemove = difficultySettings[difficulty].cells;
+      points += Math.round(cellsToRemove/10);
       while (cellsToRemove > 0) {
         const r = Math.floor(Math.random() * 9);
         const c = Math.floor(Math.random() * 9);
@@ -806,13 +809,13 @@
     function initGame(difficulty) {
       currentDifficulty = difficulty;
       solution = generateCompleteBoard();
-      givenPuzzle = createPuzzle(solution, difficulty);
-      board = deepCopy(givenPuzzle);
+      points = 0;
       mistakeCount = 0;
       correctCount = 0;
       comboCount = 0;
+      givenPuzzle = createPuzzle(solution, difficulty);
+      board = deepCopy(givenPuzzle);
       candidateHighlightLevel = 0;
-      points = 1;
       updateStats();
       diffText = difficultySettings[difficulty].label;
       document.getElementById('difficultyDisplay').innerHTML = "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
@@ -875,6 +878,7 @@
         if (e.key === "3") { document.getElementById('mediumBtn').click(); return; }
         if (e.key === "4") { document.getElementById('hardBtn').click(); return; }
         if (e.key === "5") { document.getElementById('ultraHardBtn').click(); return; }
+        if (e.key === "6") { document.getElementById('extremeHardBtn').click(); return; }
       }
       if (document.getElementById('resultScreen').style.display !== "none") {
         if (e.key === "Escape") { document.getElementById('restartBtn').click(); return; }
@@ -959,7 +963,8 @@
       { id: 'easyBtn', difficulty: 'easy' },
       { id: 'mediumBtn', difficulty: 'medium' },
       { id: 'hardBtn', difficulty: 'hard' },
-      { id: 'ultraHardBtn', difficulty: 'ultraHard' }
+      { id: 'ultraHardBtn', difficulty: 'ultraHard' },
+      { id: 'extremeHardBtn', difficulty: 'extremeHard' }
     ];
     difficultyButtons.forEach(btn => {
       document.getElementById(btn.id).addEventListener('click', function(){
