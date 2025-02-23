@@ -374,8 +374,9 @@
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em; ">Candidates(c)<br>0 pt</button>
+      <button id="highlightBtn" style="font-size: 1.0em; ">Candidates(c)<br>-1 pt</button>
       <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/Memo(m)</button>
+      <button id="magickeyBtn" style="font-size: 1.0em; ">Magickey(k)<br>-50 pt</button>
       <button id="giveUpBtn" style="font-size: 1.0em; ">Forfeit<br>(Esc)</button>
     </div>
   </div>
@@ -418,6 +419,7 @@
     let currentDifficulty = 'easy';
     let candidateHighlightLevel = 0;  // 0～3
     let isNoteMode = false;   // false: 回答モード, true: メモモード
+    let magickeyReady = false;
     let points = 1;           
     let difficultyColor = "#000"; 
     let diffText = "";
@@ -594,7 +596,12 @@
         }
         updateCellNotes(selectedCell);
       } else {
-        if (solution[r][c] === num) {
+        if (solution[r][c] === num || magickeyReady) {
+          if (magickeyReady) {
+            magickeyReady = false;
+            document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br>- 50pt';
+            num = solution[r][c];
+          }
           let bonus = getCandidates(r, c).length;
           board[r][c] = num;
           mainValueElem.textContent = num;
@@ -607,7 +614,7 @@
           setTimeout(() => document.getElementById('comboDisplay').classList.remove('animate-combo'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
-          document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>0 pt</b>';
+          document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>-1 pt</b>';
           selectedCell.noteSet.clear();
           notesElem.innerHTML = '';
           updateStats();
@@ -689,7 +696,11 @@
           cell.classList.add('cand' + candidates.length);
         }
       });
-      document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>' + candidateHighlightLevel + ' pt</b>';
+      if (candidateHighlightLevel >= 3) {
+        document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>-' + ' pt</b>';
+      } else {
+        document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>-' + (candidateHighlightLevel+1) + ' pt</b>';
+      }
     }
     
     /********************************************
@@ -800,6 +811,7 @@
       mistakeCount = 0;
       correctCount = 0;
       comboCount = 0;
+      magickeyReady = false;
       givenPuzzle = createPuzzle(solution, difficulty);
       board = deepCopy(givenPuzzle);
       candidateHighlightLevel = 0;
@@ -807,6 +819,7 @@
       diffText = difficultySettings[difficulty].label;
       document.getElementById('difficultyDisplay').innerHTML =
         "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+      document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>-1 pt</b>';
       renderGrid();
       renderNumberButtons();
       clearCandidateHighlights();
@@ -877,6 +890,10 @@
           document.getElementById('highlightBtn').click(); 
           return; 
         }
+        if (e.key.toLowerCase() === "k") { 
+          document.getElementById('magickeyBtn').click(); 
+          return; 
+        }
         if (isNoteMode && e.key.toLowerCase() === "a") { 
           isNoteMode = false; 
           updateModeButton(); 
@@ -919,9 +936,9 @@
      * 候補ハイライトボタン
     ********************************************/
     document.getElementById('highlightBtn').addEventListener('click', () => {
-      if (candidateHighlightLevel < 3 && points > 0) {
-        points--;
+      if (candidateHighlightLevel < 3 && points >= candidateHighlightLevel+1) {
         candidateHighlightLevel++;
+        points -= candidateHighlightLevel;
         updateCandidateHighlights();
         updateStats();
       }
@@ -944,6 +961,24 @@
     });
     updateModeButton();
     
+    /********************************************
+     * 魔法の鍵ボタン
+    ********************************************/
+    document.getElementById('magickeyBtn').addEventListener('click', () => {
+      if (!magickeyReady && points >= 50) {
+        magickeyReady = true;
+        points -= 50;
+        document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br><b>ON</b>';
+        updateStats();
+      }
+      else if (magickeyReady) {
+        magickeyReady = false;
+        points += 50;
+        document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br>- 50pt';
+        updateStats();
+      }
+    });
+
     /********************************************
      * スタート画面の難易度選択ボタン（リファクタリング済み）
     ********************************************/
