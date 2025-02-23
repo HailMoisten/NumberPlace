@@ -16,7 +16,32 @@
   <link rel="icon" href="favicon.ico">
   <style>
     /* ---------------------------------------------------
-       Basic Layout, Fonts & Responsive Adjustments
+       ルートのカスタムプロパティ（初期値：スマホ）
+    --------------------------------------------------- */
+    :root {
+      --font-size-S: 12px;
+      --font-size-M: 20px;
+      --font-size-L: 30px;
+    }
+    /* タブレット */
+    @media screen and (max-width:350px) {
+      :root {
+        --font-size-S: 8px;
+        --font-size-M: 12px;
+        --font-size-L: 18px;
+      }
+    }
+    /* タブレット */
+    @media screen and (min-width:500px) {
+      :root {
+        --font-size-S: 14px;
+        --font-size-M: 28px;
+        --font-size-L: 42px;
+      }
+    }
+
+    /* ---------------------------------------------------
+       基本レイアウト・フォント・レスポンシブ調整
     --------------------------------------------------- */
     body {
       font-family: 'Gill Sans', Helvetica, 'Noto Sans JP', Arial, sans-serif;
@@ -25,16 +50,23 @@
       padding: 0;
       text-align: center;
       position: relative;
-      /* overflow: hidden; Prevent vertical scrolling */
       height: 100vh;
     }
-    /* Common container styling for each screen */
+    /* 各画面の共通コンテナ */
     #startScreen, #gameScreen, #resultScreen {
       padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1, h2 {
       margin: 10px;
       animation: fadeIn 1s ease;
+      font-size: 5vw;
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -42,13 +74,13 @@
     }
     
     /* ---------------------------------------------------
-       Buttons
+       ボタン
     --------------------------------------------------- */
     button {
-      font-family: 'Gill Sans', Helvetica, 'Noto Sans JP', Arial, sans-serif;
+      font-family: inherit;
       margin: 5px;
       padding: 8px 12px;
-      font-size: 16px;
+      font-size: var(--font-size-M);
       border: none;
       border-radius: 4px;
       cursor: pointer;
@@ -60,52 +92,56 @@
       background-color: #444;
       transform: scale(1.05);
     }
-    /* Fixed width for mode toggle so size remains constant */
-    #modeToggleBtn {
-      min-width: 150px;
-    }
     
     /* ---------------------------------------------------
-       Top Status Line – Displays Difficulty and Time
+       上部ステータスライン：難易度とタイマー
     --------------------------------------------------- */
     #statusLine {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 15px;
-      font-size: 18px;
+      font-size: var(--font-size-M);
       margin-bottom: 10px;
     }
     #difficultyDisplay { font-weight: bold; }
     
     /* ---------------------------------------------------
-       np Grid – Board of 9x9 cells (default cell: 50x50px)
+       np Grid（9×9 テーブル）
+         ※幅を統一するため width:100% と max-width:450px を指定
     --------------------------------------------------- */
     #npGrid {
       border-collapse: collapse;
       margin: 0 auto 10px;
+      table-layout: fixed;
+      width: 95vmin;
+      height: 95vmin;
+      max-width: 450px;
+      max-height: 450px;
+      color:#333
     }
     #npGrid td {
       aspect-ratio: 1;
+      font-size: var(--font-size-L);
       width: 7vmin;
       height: 7vmin;
-      max-width: 60px;
-      max-height: 60px;
+      max-width: 50px;
+      max-height: 50px;
       border: 1px solid #999;
       position: relative;
       vertical-align: middle;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    /* Thick borders for 3×3 blocks */
+    /* 3×3 ブロックごとの太い枠 */
     #npGrid tr:nth-child(3n+1) td { border-top: 3px solid #333; }
     #npGrid tr td:nth-child(3n+1) { border-left: 3px solid #333; }
     #npGrid tr:last-child td { border-bottom: 3px solid #333; }
     #npGrid tr td:last-child { border-right: 3px solid #333; }
     
     /* ---------------------------------------------------
-       Cell Content – Main number & Candidate Notes
-         .main-valueはセル全体を埋めるように設定（iOS Chrome対策）
+       セル内コンテンツ：メイン数字 & メモ
+         ※.main-value はセル全体を埋める（iOS Chrome対策）
     --------------------------------------------------- */
     .cell-content {
       width: 100%;
@@ -116,7 +152,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 32px;
+      font-size: var(--font-size-L);
       width: 100%;
       height: 100%;
     }
@@ -130,7 +166,7 @@
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(3, 1fr);
       pointer-events: none;
-      font-size: 14px;
+      font-size: var(--font-size-S);
       color: #999;
     }
     .notes .note {
@@ -138,113 +174,101 @@
       justify-content: center;
       align-items: center;
     }
-    /* Given cells styling */
+    /* 与えられたセル */
     td.given .main-value {
       background-color: #eaeaea;
     }
-    /* Answered (user input) cells */
+    /* ユーザー入力済みセル */
     td.answered .main-value {
       background-color: #fff;
     }
-    /* Selected cell highlight */
+    /* 選択中セル */
     td.selected {
       outline: 2px solid #FF6600;
       z-index: 1;
     }
-    /* Correct answer flash */
-    td.correct {
-      animation: correctFlash 0.5s;
-    }
+    /* 正解時のフラッシュ */
+    td.correct { animation: correctFlash 0.5s; }
     @keyframes correctFlash {
       from { background-color: #b2fab4; }
       to { background-color: transparent; }
     }
-    /* Wrong answer flash */
-    td.wrong {
-      animation: wrongFlash 0.5s;
-    }
+    /* 不正解時のフラッシュ */
+    td.wrong { animation: wrongFlash 0.5s; }
     @keyframes wrongFlash {
       from { background-color: #fbb; }
       to { background-color: transparent; }
     }
     /* ---------------------------------------------------
-       Candidate Highlight Colors:
-         1 candidate: green tone,
-         2 candidates: yellow tone,
-         3 candidates: red tone.
+       候補ハイライト色
     --------------------------------------------------- */
     td.cand1 { background-color: #d4edda !important; }
     td.cand2 { background-color: #fff3cd !important; }
     td.cand3 { background-color: #f8d7da !important; }
     
     /* ---------------------------------------------------
-       Number Buttons – Grid layout (below the np grid)
+       Number Buttons（npGrid と同じ幅になるよう width:100% / max-width:450px）
     --------------------------------------------------- */
     #numberButtons {
+      aspect-ratio: 9 / 1;
       display: grid;
-      font-size: 26px;
-      grid-template-columns: repeat(9, 9vmin);
-      max-width: 500px;
+      width: 95vmin;
+      height: 9.5vmin;
+      max-width: 486px;
+      max-height: 50px;
+      font-size: var(--font-size-L);
+      grid-template-columns: repeat(9, 11%);
       justify-content: center;
-      text-align: center;
-      margin-left: auto;
-      margin-right: auto;
-      margin-bottom: 10px;
+      margin: 0 auto 10px;
     }
     
     /* ---------------------------------------------------
-       Stats Panel – Displays: Points, correct count, mistakes, combo
+       Stats Panel（ポイント、正解数、ミス、コンボ）
     --------------------------------------------------- */
     #statsPanel {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 15px;
-      font-size: 18px;
+      font-size: var(--font-size-M);
       margin-bottom: 10px;
+      color:#333
     }
     
     /* ---------------------------------------------------
-       Controls Panel – Candidate Highlight, Mode Toggle, Give Up
+       Controls Panel（候補ハイライト、モード切替、ギブアップ）
     --------------------------------------------------- */
     #controls {
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
+      max-height: 45px;
       gap: 10px;
-      margin-bottom: 10px;
+      font-size: var(--font-size-S);
     }
     
     /* ---------------------------------------------------
-       Animations for Combo, Mistakes, Corrects & Points
+       アニメーション定義
     --------------------------------------------------- */
-    .animate-combo {
-      animation: comboPulse 0.5s ease;
-    }
+    .animate-combo { animation: comboPulse 0.5s ease; }
     @keyframes comboPulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-    .animate-mistake {
-      animation: mistakePulse 0.5s ease;
-    }
+    .animate-mistake { animation: mistakePulse 0.5s ease; }
     @keyframes mistakePulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-    .animate-correct {
-      animation: correctPulse 0.5s ease;
-    }
+    .animate-correct { animation: correctPulse 0.5s ease; }
     @keyframes correctPulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-    .animate-points {
-      animation: pointsPulse 0.5s ease;
-    }
+    .animate-points { animation: pointsPulse 0.5s ease; }
     @keyframes pointsPulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
@@ -252,7 +276,7 @@
     }
     
     /* ---------------------------------------------------
-       Result Overlay – Dimmed background over game screen
+       Result Overlay（ゲーム画面上に半透明オーバーレイ）
     --------------------------------------------------- */
     #resultScreen {
       position: fixed;
@@ -266,37 +290,39 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
+      color:#333
     }
-    /* Result Card styling */
+    /* Result Card */
     #resultCard {      
       background: rgba(255, 255, 255, 0.8);
       padding: 20px 30px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       text-align: center;
-      font-size: 18px;
+      font-size: var(--font-size-M);
       color: #333;
       animation: fadeIn 0.5s ease;
       max-width: 90%;
+      margin: 0 auto;
     }
     #resultDifficulty { 
-      font-size: 22px; 
+      font-size: 1.2em;
       font-weight: bold; 
       margin-right: 10px; 
     }
     #resultScore { 
-      font-size: 28px; 
+      font-size: 1.5em;
       font-weight: bold; 
       margin-left: 10px; 
       margin-right: 20px; 
     }
-    /* Result stats in one line */
+    /* Result stats 一行 */
     #resultStats {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 15px;
-      font-size: 18px;
+      font-size: var(--font-size-M);
       margin-bottom: 10px;
     }
     /* Signature Area */
@@ -305,53 +331,21 @@
       padding: 10px;
       border-radius: 4px;
       margin-top: 10px;
-      width: 450px;
+      width: 700px;
       max-width: 100%;
     }
     #signatureArea h3 {
       margin: 0 0 5px 0;
-      font-size: 16px;
+      font-size: var(--font-size-M);
       text-align: left;
-    }
-    
-    /* ---------------------------------------------------
-       Responsive Design Adjustments (スマホ版: 文字・ボタン大め)
-    --------------------------------------------------- */
-    @media (max-width: 600px) {
-      #npGrid td {
-        width: 8vmin;
-        height: 8vmin;
-        aspect-ratio: 1;
-      }
-      .main-value {
-        font-size: 26px;
-        /* 行の高さはflexで中央揃えのため不要 */
-      }
-      .notes {
-        font-size: 10px;
-      }
-      #numberButtons {
-        grid-template-columns: repeat(9, 9vmin);
-        max-width: 500px;
-      }
-      button, #modeToggleBtn {
-        font-size: 14px;
-        padding: 10px 14px;
-      }
-      #statusLine, #statsPanel, #resultStats {
-        font-size: 20px;
-      }
-      #signatureArea {
-        width: 95%;
-      }
     }
   </style>
 </head>
 <body>
-  <!-- Start Screen: Difficulty Selection -->
+  <!-- Start Screen: 難易度選択 -->
   <div id="startScreen">
     <h1>Number Place</h1>
-    <p>Select Difficulty</p>
+    <p style = "font-size: var(--font-size-M);">SELECT DIFFICULTY</p>
     <button id="superEasyBtn" style="background-color: #306061;">Super Easy 10 (1)</button>
     <button id="easyBtn" style="background-color: #30613b;">Easy 20 (2)</button>
     <button id="mediumBtn" style="background-color: #74663a;">Medium 30 (3)</button>
@@ -362,27 +356,27 @@
   
   <!-- Game Screen -->
   <div id="gameScreen" style="display:none;">
-    <!-- Top Status Line: Difficulty and Time -->
+    <!-- ステータスライン -->
     <div id="statusLine">
       <span id="difficultyDisplay"></span>
       <span id="timeDisplay">00:00</span>
     </div>
     <!-- np Grid -->
     <table id="npGrid"></table>
-    <!-- Number Buttons (1-9) -->
+    <!-- Number Buttons -->
     <div id="numberButtons"></div>
-    <!-- Stats Panel: Points, correct count, mistakes, combo -->
+    <!-- Stats Panel -->
     <div id="statsPanel">
       <span id="pointsDisplay">1 pt</span>
       <span id="correctsDisplay">○ 0</span>
       <span id="mistakesDisplay">× 0</span>
       <span id="comboDisplay">0 combo</span>
     </div>
-    <!-- Controls Panel: Candidate Highlight, Mode Toggle, Give Up -->
+    <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn">Candidate<br>Highlight (h): 0 pt</button>
-      <button id="modeToggleBtn">Answer (a) / <b>Memo (m)</b></button>
-      <button id="giveUpBtn">Give up(Esc)<br>-1 pt</button>
+      <button id="highlightBtn" style="font-size: 1.0em; ">Candidate Highlight (h)<br>0 pt</button>
+      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer (a)</b><br>/ Memo (m)</button>
+      <button id="giveUpBtn" style="font-size: 1.0em; ">Give up(Esc)<br>-1 pt</button>
     </div>
   </div>
   
@@ -410,22 +404,22 @@
   
   <script>
     /********************************************
-     * Global Variables & Difficulty Settings
+     * グローバル変数・難易度設定
     ********************************************/
-    let board = [];           // Current board (9x9 array)
-    let solution = [];        // Complete solution board
-    let givenPuzzle = [];     // Initial puzzle (given cells)
-    let selectedCell = null;  // Currently selected cell (<td> element)
-    let timerInterval = null; // Timer interval
-    let startTime;            // Game start time
-    let mistakeCount = 0;     // Number of mistakes
-    let correctCount = 0;     // Count of correctly answered cells
-    let comboCount = 0;       // Combo count for consecutive correct answers
+    let board = [];           // 9x9盤面
+    let solution = [];        // 完全解
+    let givenPuzzle = [];     // 与えられた盤面
+    let selectedCell = null;  // 選択中セル（td 要素）
+    let timerInterval = null; // タイマー
+    let startTime;            // 開始時刻
+    let mistakeCount = 0;     
+    let correctCount = 0;     
+    let comboCount = 0;       
     let currentDifficulty = 'easy';
-    let candidateHighlightLevel = 0;  // 0 ~ 3
-    let isNoteMode = false;   // false: Answer mode, true: Memo mode
-    let points = 1;           // Starting points
-    let difficultyColor = "#000"; // 選択ボタンの背景色から設定
+    let candidateHighlightLevel = 0;  // 0～3
+    let isNoteMode = false;   // false: 回答モード, true: メモモード
+    let points = 1;           
+    let difficultyColor = "#000"; 
     let diffText = "";
     
     const difficultySettings = {
@@ -438,14 +432,14 @@
     };
     
     /********************************************
-     * Utility: Deep Copy an Array
+     * 配列のディープコピー
     ********************************************/
     function deepCopy(arr) {
       return arr.map(row => row.slice());
     }
     
     /********************************************
-     * Generate a complete board (backtracking)
+     * 完全盤面の生成（バックトラック）
     ********************************************/
     function generateCompleteBoard() {
       let board = Array.from({ length: 9 }, () => Array(9).fill(0));
@@ -489,7 +483,7 @@
     }
     
     /********************************************
-     * Create Puzzle: Remove cells based on difficulty
+     * 与えられた盤面の作成（難易度に応じてセル除去）
     ********************************************/
     function createPuzzle(fullBoard, difficulty) {
       let puzzle = deepCopy(fullBoard);
@@ -507,7 +501,7 @@
     }
     
     /********************************************
-     * Render the np Grid.
+     * 盤面（npGrid）のレンダリング
     ********************************************/
     function renderGrid() {
       const grid = document.getElementById('npGrid');
@@ -518,7 +512,6 @@
           const cell = document.createElement('td');
           cell.dataset.row = r;
           cell.dataset.col = c;
-          // Initialize memo note set for this cell
           cell.noteSet = new Set();
           const cellContent = document.createElement('div');
           cellContent.classList.add('cell-content');
@@ -540,7 +533,7 @@
         }
         grid.appendChild(rowElem);
       }
-      // 自動で中央付近のセルを選択（4,4：0-indexed）
+      // 初期選択（中央付近：4,4）
       let initCell = document.querySelector('#npGrid td[data-row="4"][data-col="4"]');
       if (initCell) {
         selectedCell = initCell;
@@ -549,18 +542,20 @@
     }
     
     /********************************************
-     * Render Number Buttons (1-9)
+     * Number Buttons のレンダリング（1～9）
     ********************************************/
     function renderNumberButtons() {
       const container = document.getElementById('numberButtons');
       container.innerHTML = '';
       for (let i = 1; i <= 9; i++) {
         const btn = document.createElement('button');
-        btn.style.fontSize = '18px';
-        btn.style.margin = '2px';
-        btn.style.width = '8vmin';
-        btn.style.height = '8vmin';
-        btn.style.padding = '0px';
+        btn.style.fontSize = "var(--font-size-L)";
+        btn.style.margin = "2px";
+        btn.style.width = "10vmin";
+        btn.style.height = "10vmin";
+        btn.style.maxWidth = "48px";
+        btn.style.maxHeight = "48px";
+        btn.style.padding = "0px";
         btn.textContent = i;
         btn.dataset.number = i;
         btn.addEventListener('click', () => onNumberInput(parseInt(btn.dataset.number)));
@@ -569,18 +564,16 @@
     }
     
     /********************************************
-     * Cell Click Handler
+     * セルクリックハンドラ
     ********************************************/
     function onCellClick(e) {
-      if (selectedCell) {
-        selectedCell.classList.remove('selected');
-      }
+      if (selectedCell) { selectedCell.classList.remove('selected'); }
       selectedCell = e.currentTarget;
       selectedCell.classList.add('selected');
     }
     
     /********************************************
-     * Number Input Handler
+     * 数字入力ハンドラ
     ********************************************/
     function onNumberInput(num) {
       if (!selectedCell) return;
@@ -591,13 +584,9 @@
       const notesElem = selectedCell.querySelector('.notes');
       
       if (isNoteMode) {
-        // Memo mode: 初回は1～9をセット
         if (selectedCell.noteSet.size === 0) {
-          for (let i = 1; i <= 9; i++) {
-            selectedCell.noteSet.add(i);
-          }
+          for (let i = 1; i <= 9; i++) { selectedCell.noteSet.add(i); }
         }
-        // 数字のトグル
         if (selectedCell.noteSet.has(num)) {
           selectedCell.noteSet.delete(num);
         } else {
@@ -605,7 +594,6 @@
         }
         updateCellNotes(selectedCell);
       } else {
-        // Answer mode: 回答チェック
         if (solution[r][c] === num) {
           let bonus = getCandidates(r, c).length;
           board[r][c] = num;
@@ -615,12 +603,11 @@
           points += bonus * comboCount;
           showPointBonus(bonus * comboCount);
           correctCount++;
-          const comboDisplay = document.getElementById('comboDisplay');
-          comboDisplay.classList.add('animate-combo');
-          setTimeout(() => comboDisplay.classList.remove('animate-combo'), 500);
+          document.getElementById('comboDisplay').classList.add('animate-combo');
+          setTimeout(() => document.getElementById('comboDisplay').classList.remove('animate-combo'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
-          document.getElementById('highlightBtn').textContent = 'Candidate Highlight (h): 0 pt';
+          document.getElementById('highlightBtn').innerHTML = 'Candidate Highlight (h)<br><b>0 pt</b>';
           selectedCell.noteSet.clear();
           notesElem.innerHTML = '';
           updateStats();
@@ -644,7 +631,7 @@
     }
     
     /********************************************
-     * Update a cell's memo notes (Memo mode)
+     * セルのメモ更新（Memo モード）
     ********************************************/
     function updateCellNotes(cell) {
       const notesElem = cell.querySelector('.notes');
@@ -661,7 +648,7 @@
     }
     
     /********************************************
-     * Update cell notes with candidate numbers (on wrong answer)
+     * 間違い時の候補表示更新
     ********************************************/
     function updateCellNotesWithCandidates(cell, candidates) {
       const notesElem = cell.querySelector('.notes');
@@ -677,7 +664,7 @@
     }
     
     /********************************************
-     * Clear candidate highlights on all cells
+     * 全セルの候補ハイライト解除
     ********************************************/
     function clearCandidateHighlights() {
       document.querySelectorAll('#npGrid td').forEach(cell => {
@@ -686,7 +673,7 @@
     }
     
     /********************************************
-     * Update candidate highlights based on valid candidate count
+     * 候補ハイライト更新（候補数が閾値以下の場合）
     ********************************************/
     function updateCandidateHighlights() {
       document.querySelectorAll('#npGrid td').forEach(cell => {
@@ -702,11 +689,11 @@
           cell.classList.add('cand' + candidates.length);
         }
       });
-      document.getElementById('highlightBtn').textContent = 'Candidate Highlight (h): ' + candidateHighlightLevel + ' pt';
+      document.getElementById('highlightBtn').innerHTML = 'Candidate Highlight (h)<br><b>' + candidateHighlightLevel + ' pt</b>';
     }
     
     /********************************************
-     * Check if placing num at board[r][c] is valid.
+     * 指定セルに num を置くことが可能か判定
     ********************************************/
     function isValidForCell(board, r, c, num) {
       for (let i = 0; i < 9; i++) {
@@ -723,7 +710,7 @@
     }
     
     /********************************************
-     * Get valid candidate numbers for cell [r][c]
+     * セル [r][c] の有効候補を取得
     ********************************************/
     function getCandidates(r, c) {
       let candidates = [];
@@ -737,7 +724,7 @@
     }
     
     /********************************************
-     * Update Timer display (mm:ss)
+     * タイマー更新（mm:ss 表示）
     ********************************************/
     function updateTimer() {
       const now = new Date();
@@ -748,7 +735,7 @@
     }
     
     /********************************************
-     * Start Timer
+     * タイマー開始
     ********************************************/
     function startTimer() {
       startTime = new Date();
@@ -756,7 +743,7 @@
     }
     
     /********************************************
-     * Check if the board is completely filled
+     * 盤面が全て埋まっているか判定
     ********************************************/
     function isBoardComplete() {
       for (let r = 0; r < 9; r++) {
@@ -768,7 +755,7 @@
     }
     
     /********************************************
-     * Update Stats Panel (Points, correct count, mistakes, combo)
+     * Stats Panel 更新（ポイント、正解数、ミス、コンボ）
     ********************************************/
     function updateStats() {
       document.getElementById('pointsDisplay').textContent = points + " pt";
@@ -778,7 +765,7 @@
     }
     
     /********************************************
-     * Show bonus point animation above points display.
+     * ポイントボーナスのアニメーション表示（pointsDisplay 上部）
     ********************************************/
     function showPointBonus(bonus) {
       if (bonus <= 0) return;
@@ -791,7 +778,7 @@
       const pointsDisplay = document.getElementById('pointsDisplay');
       const rect = pointsDisplay.getBoundingClientRect();
       bonusElem.style.left = (rect.left + rect.width/2) + "px";
-      bonusElem.style.top = rect.top + 4 + "px";
+      bonusElem.style.top = (rect.top + 4) + "px";
       bonusElem.style.transform = "translate(-50%, -110%)";
       document.body.appendChild(bonusElem);
       bonusElem.style.transition = "opacity 1.5s ease, transform 1.5s ease";
@@ -804,7 +791,7 @@
     }
     
     /********************************************
-     * Initialize Game: Setup board, reset counts, render grid & buttons.
+     * ゲーム初期化：盤面生成、各カウントリセット、レンダリング開始
     ********************************************/
     function initGame(difficulty) {
       currentDifficulty = difficulty;
@@ -818,7 +805,8 @@
       candidateHighlightLevel = 0;
       updateStats();
       diffText = difficultySettings[difficulty].label;
-      document.getElementById('difficultyDisplay').innerHTML = "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+      document.getElementById('difficultyDisplay').innerHTML =
+        "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
       renderGrid();
       renderNumberButtons();
       clearCandidateHighlights();
@@ -826,15 +814,16 @@
     }
     
     /********************************************
-     * Show Result Overlay
+     * 結果表示（Result Overlay）
     ********************************************/
     function showResult() {
       clearInterval(timerInterval);
-      document.getElementById('resultDifficulty').innerHTML = "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+      document.getElementById('resultDifficulty').innerHTML =
+        "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
       const elapsed = Math.floor((new Date() - startTime) / 1000);
       const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const s = String(elapsed % 60).padStart(2, '0');
-      const score = Math.round(points * 60/(Math.floor(elapsed / 60)*60 + (Math.floor(elapsed % 60))||1) * (1 - (mistakeCount/(correctCount||1))));
+      const score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
       document.getElementById('resultScore').innerHTML = "<span>" + score + "</span>";
       const resultStats = document.getElementById('resultStats');
       resultStats.innerHTML = 
@@ -847,7 +836,7 @@
     }
     
     /********************************************
-     * "Give up" Button – Show result immediately.
+     * 「Give up」ボタン
     ********************************************/
     document.getElementById('giveUpBtn').addEventListener('click', function(){
       clearInterval(timerInterval);
@@ -856,7 +845,7 @@
     });
     
     /********************************************
-     * "Replay" Button – Return to Start Screen.
+     * 「Replay」ボタン（結果画面→スタート画面）
     ********************************************/
     document.getElementById('restartBtn').addEventListener('click', function(){
       const signatureCanvas = document.getElementById('signatureCanvas');
@@ -864,12 +853,12 @@
       sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
       document.getElementById('resultScreen').style.display = "none";
       document.getElementById('gameScreen').style.display = "none";
-      document.getElementById('startScreen').style.display = "block";
+      document.getElementById('startScreen').style.display = "flex";
       document.getElementById('npGrid').innerHTML = "";
     });
     
     /********************************************
-     * Keyboard Input Handling
+     * キーボード入力ハンドリング
     ********************************************/
     document.addEventListener('keydown', (e) => {
       if (document.getElementById('startScreen').style.display !== "none") {
@@ -927,7 +916,7 @@
     });
     
     /********************************************
-     * Candidate Highlight Button
+     * 候補ハイライトボタン
     ********************************************/
     document.getElementById('highlightBtn').addEventListener('click', () => {
       if (candidateHighlightLevel < 3 && points > 0) {
@@ -939,14 +928,14 @@
     });
     
     /********************************************
-     * Mode Toggle Button
+     * モード切替ボタン
     ********************************************/
     function updateModeButton() {
       const btn = document.getElementById('modeToggleBtn');
       if (isNoteMode) {
-        btn.innerHTML = "Answer (a) / <b>Memo (m)</b>";
+        btn.innerHTML = "Answer (a)<br> / <b>Memo (m)</b>";
       } else {
-        btn.innerHTML = "<b>Answer (a)</b> / Memo (m)";
+        btn.innerHTML = "<b>Answer (a)</b><br> / Memo (m)";
       }
     }
     document.getElementById('modeToggleBtn').addEventListener('click', function(){
@@ -956,7 +945,7 @@
     updateModeButton();
     
     /********************************************
-     * Start Screen Difficulty Buttons (Refactored)
+     * スタート画面の難易度選択ボタン（リファクタリング済み）
     ********************************************/
     const difficultyButtons = [
       { id: 'superEasyBtn', difficulty: 'superEasy' },
@@ -976,7 +965,7 @@
     });
     
     /********************************************
-     * Signature Canvas Setup (for Result Screen)
+     * Signature Canvas セットアップ（結果画面用）
     ********************************************/
     const signatureCanvas = document.getElementById('signatureCanvas');
     const sigCtx = signatureCanvas.getContext('2d');
@@ -1010,7 +999,7 @@
     });
     signatureCanvas.addEventListener('mouseup', () => drawing = false);
     signatureCanvas.addEventListener('mouseout', () => drawing = false);
-    // Touch events for mobile
+    // Touch 対応
     signatureCanvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
       drawing = true;
