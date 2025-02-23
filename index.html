@@ -58,9 +58,8 @@
       padding: 20px;
       max-width: 500px;
       margin: auto;
-    }
-    #startScreen {
       display: flex;
+      justify-content: center;
       flex-direction: column;
       align-items: center;
     }
@@ -241,7 +240,7 @@
     --------------------------------------------------- */
     #controls {
       display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
       align-items: center;
       max-height: 45px;
       gap: 10px;
@@ -296,7 +295,7 @@
     /* Result Card */
     #resultCard {      
       background: rgba(255, 255, 255, 0.8);
-      padding: 20px 30px;
+      padding: 10px 10px;
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       text-align: center;
@@ -332,8 +331,8 @@
       padding: 10px;
       border-radius: 4px;
       margin-top: 10px;
-      width: 700px;
-      max-width: 100%;
+      width: 95%;
+      max-width: 100%-10px;
     }
     #signatureArea h3 {
       margin: 0 0 5px 0;
@@ -375,9 +374,9 @@
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em; ">Candidate Highlight(h)<br>0 pt</button>
+      <button id="highlightBtn" style="font-size: 1.0em; ">Highlight(h)<br>0 pt</button>
       <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/Memo(m)</button>
-      <button id="giveUpBtn" style="font-size: 1.0em; ">Give up(Esc)<br>-1 pt</button>
+      <button id="giveUpBtn" style="font-size: 1.0em; ">Forfeit<br>(Esc)</button>
     </div>
   </div>
   
