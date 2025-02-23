@@ -251,19 +251,28 @@
     /* ---------------------------------------------------
        アニメーション定義
     --------------------------------------------------- */
-    .animate-combo { animation: comboPulse 0.5s ease; }
+    .animate-combo {
+      animation: comboPulse 0.5s ease;
+      color: #438445;
+    }
     @keyframes comboPulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-    .animate-mistake { animation: mistakePulse 0.5s ease; }
+    .animate-mistake {
+      animation: mistakePulse 0.5s ease;
+      color: #FF6600;
+    }
     @keyframes mistakePulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
-    .animate-correct { animation: correctPulse 0.5s ease; }
+    .animate-correct {
+      animation: correctPulse 0.5s ease;
+      color: #438445;
+    }
     @keyframes correctPulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.3); }
@@ -610,6 +619,9 @@
           points += bonus * comboCount;
           showPointBonus(bonus * comboCount);
           correctCount++;
+          const correctsDisplay = document.getElementById('correctsDisplay');
+          correctsDisplay.classList.add('animate-correct');
+          setTimeout(() => correctsDisplay.classList.remove('animate-correct'), 500);
           document.getElementById('comboDisplay').classList.add('animate-combo');
           setTimeout(() => document.getElementById('comboDisplay').classList.remove('animate-combo'), 500);
           clearCandidateHighlights();
