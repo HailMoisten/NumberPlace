@@ -51,6 +51,7 @@
       text-align: center;
       position: relative;
       height: 100%;
+      touch-action: manipulation;
     }
     /* 各画面の共通コンテナ */
     #startScreen, #gameScreen, #resultScreen {
@@ -375,7 +376,7 @@
     <!-- Controls Panel -->
     <div id="controls">
       <button id="highlightBtn" style="font-size: 1.0em; ">Candidate Highlight(h)<br>0 pt</button>
-      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/ Memo(m)</button>
+      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/Memo(m)</button>
       <button id="giveUpBtn" style="font-size: 1.0em; ">Give up(Esc)<br>-1 pt</button>
     </div>
   </div>
@@ -933,9 +934,9 @@
     function updateModeButton() {
       const btn = document.getElementById('modeToggleBtn');
       if (isNoteMode) {
-        btn.innerHTML = "Answer(a)<br> / <b>Memo(m)</b>";
+        btn.innerHTML = "Answer(a)<br>/<b>Memo(m)</b>";
       } else {
-        btn.innerHTML = "<b>Answer(a)</b><br> / Memo(m)";
+        btn.innerHTML = "<b>Answer(a)</b><br>/Memo(m)";
       }
     }
     document.getElementById('modeToggleBtn').addEventListener('click', function(){
