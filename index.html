@@ -373,7 +373,7 @@
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em; ">Highlight(h)<br>0 pt</button>
+      <button id="highlightBtn" style="font-size: 1.0em; ">Candidates(c)<br>0 pt</button>
       <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/Memo(m)</button>
       <button id="giveUpBtn" style="font-size: 1.0em; ">Forfeit<br>(Esc)</button>
     </div>
@@ -606,7 +606,7 @@
           setTimeout(() => document.getElementById('comboDisplay').classList.remove('animate-combo'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
-          document.getElementById('highlightBtn').innerHTML = 'Candidate Highlight (h)<br><b>0 pt</b>';
+          document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>0 pt</b>';
           selectedCell.noteSet.clear();
           notesElem.innerHTML = '';
           updateStats();
@@ -688,7 +688,7 @@
           cell.classList.add('cand' + candidates.length);
         }
       });
-      document.getElementById('highlightBtn').innerHTML = 'Candidate Highlight (h)<br><b>' + candidateHighlightLevel + ' pt</b>';
+      document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>' + candidateHighlightLevel + ' pt</b>';
     }
     
     /********************************************
@@ -872,7 +872,7 @@
         if (e.key === "Escape") { document.getElementById('restartBtn').click(); return; }
       }
       if (document.getElementById('gameScreen').style.display !== "none") {
-        if (e.key.toLowerCase() === "h") { 
+        if (e.key.toLowerCase() === "c") { 
           document.getElementById('highlightBtn').click(); 
           return; 
         }
