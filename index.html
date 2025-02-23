@@ -123,8 +123,8 @@
     #npGrid td {
       aspect-ratio: 1;
       font-size: var(--font-size-L);
-      width: 8vmin;
-      height: 8vmin;
+      width: 7vmin;
+      height: 7vmin;
       max-width: 50px;
       max-height: 50px;
       border: 1px solid #999;
@@ -374,8 +374,8 @@
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em; ">Candidate Highlight (h)<br>0 pt</button>
-      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer (a)</b><br>/ Memo (m)</button>
+      <button id="highlightBtn" style="font-size: 1.0em; ">Candidate Highlight(h)<br>0 pt</button>
+      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/ Memo(m)</button>
       <button id="giveUpBtn" style="font-size: 1.0em; ">Give up(Esc)<br>-1 pt</button>
     </div>
   </div>
@@ -553,8 +553,8 @@
         btn.style.margin = "2px";
         btn.style.width = "9vmin";
         btn.style.height = "9vmin";
-        btn.style.maxWidth = "45px";
-        btn.style.maxHeight = "45px";
+        btn.style.maxWidth = "48px";
+        btn.style.maxHeight = "48px";
         btn.style.padding = "0px";
         btn.textContent = i;
         btn.dataset.number = i;
@@ -933,9 +933,9 @@
     function updateModeButton() {
       const btn = document.getElementById('modeToggleBtn');
       if (isNoteMode) {
-        btn.innerHTML = "Answer (a)<br> / <b>Memo (m)</b>";
+        btn.innerHTML = "Answer(a)<br> / <b>Memo(m)</b>";
       } else {
-        btn.innerHTML = "<b>Answer (a)</b><br> / Memo (m)";
+        btn.innerHTML = "<b>Answer(a)</b><br> / Memo(m)";
       }
     }
     document.getElementById('modeToggleBtn').addEventListener('click', function(){
