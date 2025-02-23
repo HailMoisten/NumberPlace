@@ -66,7 +66,7 @@
     h1, h2 {
       margin: 10px;
       animation: fadeIn 1s ease;
-      font-size: 5vw;
+      font-size: var(--font-size-L);
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -114,8 +114,8 @@
       border-collapse: collapse;
       margin: 0 auto 10px;
       table-layout: fixed;
-      width: 95vmin;
-      height: 95vmin;
+      width: 90vmin;
+      height: 90vmin;
       max-width: 450px;
       max-height: 450px;
       color:#333
@@ -123,8 +123,8 @@
     #npGrid td {
       aspect-ratio: 1;
       font-size: var(--font-size-L);
-      width: 7vmin;
-      height: 7vmin;
+      width: 8vmin;
+      height: 8vmin;
       max-width: 50px;
       max-height: 50px;
       border: 1px solid #999;
@@ -212,8 +212,8 @@
     #numberButtons {
       aspect-ratio: 9 / 1;
       display: grid;
-      width: 95vmin;
-      height: 9.5vmin;
+      width: 90vmin;
+      height: 9vmin;
       max-width: 486px;
       max-height: 50px;
       font-size: var(--font-size-L);
@@ -551,10 +551,10 @@
         const btn = document.createElement('button');
         btn.style.fontSize = "var(--font-size-L)";
         btn.style.margin = "2px";
-        btn.style.width = "10vmin";
-        btn.style.height = "10vmin";
-        btn.style.maxWidth = "48px";
-        btn.style.maxHeight = "48px";
+        btn.style.width = "9vmin";
+        btn.style.height = "9vmin";
+        btn.style.maxWidth = "45px";
+        btn.style.maxHeight = "45px";
         btn.style.padding = "0px";
         btn.textContent = i;
         btn.dataset.number = i;
