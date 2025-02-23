@@ -428,7 +428,6 @@
     let currentDifficulty = 'easy';
     let candidateHighlightLevel = 0;  // 0～3
     let isNoteMode = false;   // false: 回答モード, true: メモモード
-    let magickeyReady = false;
     let points = 1;           
     let difficultyColor = "#000"; 
     let diffText = "";
@@ -595,9 +594,6 @@
       const notesElem = selectedCell.querySelector('.notes');
       
       if (isNoteMode) {
-        if (selectedCell.noteSet.size === 0) {
-          for (let i = 1; i <= 9; i++) { selectedCell.noteSet.add(i); }
-        }
         if (selectedCell.noteSet.has(num)) {
           selectedCell.noteSet.delete(num);
         } else {
@@ -605,12 +601,7 @@
         }
         updateCellNotes(selectedCell);
       } else {
-        if (solution[r][c] === num || magickeyReady) {
-          if (magickeyReady) {
-            magickeyReady = false;
-            document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br>- 50pt';
-            num = solution[r][c];
-          }
+        if (solution[r][c] === num) {
           let bonus = getCandidates(r, c).length;
           board[r][c] = num;
           mainValueElem.textContent = num;
@@ -823,7 +814,6 @@
       mistakeCount = 0;
       correctCount = 0;
       comboCount = 0;
-      magickeyReady = false;
       givenPuzzle = createPuzzle(solution, difficulty);
       board = deepCopy(givenPuzzle);
       candidateHighlightLevel = 0;
@@ -977,16 +967,11 @@
      * 魔法の鍵ボタン
     ********************************************/
     document.getElementById('magickeyBtn').addEventListener('click', () => {
-      if (!magickeyReady && points >= 50) {
-        magickeyReady = true;
+      if (points >= 50) {
         points -= 50;
-        document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br><b>ON</b>';
-        updateStats();
-      }
-      else if (magickeyReady) {
-        magickeyReady = false;
-        points += 50;
-        document.getElementById('magickeyBtn').innerHTML = 'Magickey(k)<br>- 50pt';
+        const r = parseInt(selectedCell.dataset.row);
+        const c = parseInt(selectedCell.dataset.col);
+        onNumberInput(solution[r][c]);
         updateStats();
       }
     });
