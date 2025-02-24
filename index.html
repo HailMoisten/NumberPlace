@@ -481,6 +481,7 @@
       document.getElementById('todayDate').textContent =
         new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
     </script>
+    <aside>ver.2025.2.24 <a href="https://github.com/HailMoisten/NumberPlace" target="_blank">GitHub</a><br>GPL-3.0 license © 2025 Hail Moisten</aside>
   </div>
 
   <!-- Game Screen -->
@@ -657,42 +658,45 @@
       let cellsToRemove = difficultySettings[difficulty].cells;
       points += Math.round(cellsToRemove/10);
       let removalAttempts = 0;
-      const threshold = 1000;
+      const threshold = 100;
       while (cellsToRemove > 0) {
-        if (removalAttempts > threshold) {
-          for (let r = 0; r < 9 && cellsToRemove > 0; r++) {
-            for (let c = 0; c < 9 && cellsToRemove > 0; c++) {
-              if (puzzle[r][c] !== 0) {
-                puzzle[r][c] = 0;
-                cellsToRemove--;
-              }
-            }
-          }
-          break;
-        }
-        removalAttempts++;
         const r = Math.floor(Math.random() * 9);
         const c = Math.floor(Math.random() * 9);
-        if (puzzle[r][c] !== 0) {
-          const backup = puzzle[r][c];
-          puzzle[r][c] = 0;
-          let forcedExists = false;
-          for (let i = 0; i < 9; i++) {
-            for (let j = 0; j < 9; j++) {
-              if (puzzle[i][j] === 0) {
-                const cand = getCandidatesForPuzzle(puzzle, i, j);
-                if (cand.length === 1) {
-                  forcedExists = true;
-                  break;
+        if (removalAttempts > threshold) {
+          if (puzzle[r][c] !== 0) {
+            puzzle[r][c] = 0;
+            cellsToRemove--;
+            removalAttempts = 0;
+          }
+        }
+        else {
+          removalAttempts++;
+          let candBefore = 0;
+          let candAfter = 0;
+          if (puzzle[r][c] !== 0) {
+            const backup = puzzle[r][c];
+            for (let i = 0; i < 9; i++) {
+              for (let j = 0; j < 9; j++) {
+                if (puzzle[i][j] === 0) {
+                  const cand = getCandidatesForPuzzle(puzzle, i, j);
+                  if (cand.length === 1) { candBefore++; }
                 }
               }
             }
-            if (forcedExists) break;
-          }
-          if (forcedExists) {
-            cellsToRemove--;
-          } else {
-            puzzle[r][c] = backup;
+            puzzle[r][c] = 0;
+            for (let i = 0; i < 9; i++) {
+              for (let j = 0; j < 9; j++) {
+                if (puzzle[i][j] === 0) {
+                  const cand = getCandidatesForPuzzle(puzzle, i, j);
+                  if (cand.length === 1) { candAfter++; }
+                }
+              }
+            }
+            if (candBefore - candAfter <= 2 && candBefore - candAfter > 0) {
+              cellsToRemove--;
+            } else {
+              puzzle[r][c] = backup;
+            }
           }
         }
       }
