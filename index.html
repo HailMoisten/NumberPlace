@@ -42,8 +42,8 @@
       --color-selected-answer: #ff9100;
       --color-selected-memo: #30613b;
       --grid-border-color: var(--color-difficulty3); /* 初期は回答モード */
-      --highlight-color-note: rgba(192, 255, 206, 0.2);
-      --highlight-color-answer: rgba(255, 242, 202, 0.2);
+      --highlight-color-note: rgba(191, 255, 205, 0.2);
+      --highlight-color-answer: rgba(253, 238, 191, 0.2);
     }
     /* タブレット */
     @media screen and (max-width:350px) {
@@ -103,6 +103,7 @@
       width: 54px;
       height: 30px;
       vertical-align: middle;
+      margin: 5px;
     }
     .switch input {
       opacity: 0;
@@ -461,13 +462,13 @@
     <h1>Number Place</h1>
     <p style="font-size: var(--font-size-M);">SELECT DIFFICULTY</p>
     <!-- 各難易度ボタン -->
-    <button id="superEasyBtn" style="background-color: var(--color-difficulty1);">Super Easy 10 (1)</button>
-    <button id="easyBtn" style="background-color: var(--color-difficulty2);">Easy 20 (2)</button>
-    <button id="mediumBtn" style="background-color: var(--color-difficulty3);">Medium 30 (3)</button>
-    <button id="hardBtn" style="background-color: var(--color-difficulty4);">Hard 40 (4)</button>
-    <button id="ultraHardBtn" style="background-color: var(--color-difficulty5);">Ultra Hard 50 (5)</button>
-    <button id="extremeHardBtn" style="background-color: var(--color-difficulty6);">Extreme Hard 55 (6)</button>
-    <button id="supremeHardBtn" style="background-color: var(--color-difficulty7);">Supreme Hard 60 (7)</button>
+    <button id="superEasyBtn" style="background-color: var(--color-difficulty1);">SUPER EASY 10 (1)</button>
+    <button id="easyBtn" style="background-color: var(--color-difficulty2);">EASY 20 (2)</button>
+    <button id="mediumBtn" style="background-color: var(--color-difficulty3);">MEDIUM 30 (3)</button>
+    <button id="hardBtn" style="background-color: var(--color-difficulty4);">HARD 40 (4)</button>
+    <button id="ultraHardBtn" style="background-color: var(--color-difficulty5);">ULTRA HARD 50 (5)</button>
+    <button id="extremeHardBtn" style="background-color: var(--color-difficulty6);">EXTREME HARD 55 (6)</button>
+    <button id="supremeHardBtn" style="background-color: var(--color-difficulty7);">SUPREME HARD 60 (7)</button>
     <!-- デイリーボードトグル（iOS風） -->
     <div id="dailyBoardToggleContainer" style="margin: 10px;">
       <label class="switch">
@@ -475,11 +476,11 @@
         <span class="slider round"></span>
       </label>
       <span id="dailyBoardLabel" style="font-size: var(--font-size-M); vertical-align: middle;" >DAILY BOARD</span>
-      <span id="todayDate" style="font-size: var(--font-size-M); margin-left: 10px; vertical-align: middle;" ></span>
+      <span id="todayDate" style="font-size: var(--font-size-M); vertical-align: middle;" ></span>
     </div>
     <script>
       document.getElementById('todayDate').textContent =
-        new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        " of " + new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
     </script>
     <aside>ver.2025.2.24 <a href="https://github.com/HailMoisten/NumberPlace" target="_blank">GitHub</a><br>GPL-3.0 license © 2025 Hail Moisten</aside>
   </div>
@@ -554,13 +555,13 @@
     let diffText = "";
     
     const difficultySettings = {
-      superEasy: { cells: 10, label: "Super Easy 10" },
-      easy: { cells: 20, label: "Easy 20" },
-      medium: { cells: 30, label: "Medium 30" },
-      hard: { cells: 40, label: "Hard 40" },
-      ultraHard: { cells: 50, label: "Ultra Hard 50" },
-      extremeHard: { cells: 55, label: "Extreme Hard 55" },
-      supremeHard: { cells: 60, label: "Supreme Hard 60" }
+      superEasy: { cells: 10, label: "SUPER EASY 10" },
+      easy: { cells: 20, label: "EASY 20" },
+      medium: { cells: 30, label: "MEDIUM 30" },
+      hard: { cells: 40, label: "HARD 40" },
+      ultraHard: { cells: 50, label: "ULTRA HARD 50" },
+      extremeHard: { cells: 55, label: "EXTREME HARD 55" },
+      supremeHard: { cells: 60, label: "SUPREME HARD 60" }
     };
 
     /********************************************
@@ -824,6 +825,9 @@
           const correctsDisplay = document.getElementById('correctsDisplay');
           correctsDisplay.classList.add('animate-correct');
           setTimeout(() => correctsDisplay.classList.remove('animate-correct'), 500);
+          const comboDisplay = document.getElementById('comboDisplay');
+          comboDisplay.classList.add('animate-correct');
+          setTimeout(() => comboDisplay.classList.remove('animate-correct'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
           document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>1 pt';
@@ -1076,8 +1080,9 @@
       candidateHighlightLevel = 0;
       updateStats();
       diffText = difficultySettings[difficulty].label;
+      var displayDiff = dailyBoardOn ? diffText + " (DAILY)" : diffText;
       document.getElementById('difficultyDisplay').innerHTML =
-        "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
+        "<span style='color:" + difficultyColor + "'>" + displayDiff + "</span>";
       document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>1 pt';
       renderGrid();
       renderNumberButtons();
