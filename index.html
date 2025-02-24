@@ -39,11 +39,11 @@
       --color-difficulty5: #60306b;
       --color-difficulty6: #391921;
       --color-difficulty7: black;
-      --color-selected-answer: #ff9100;
+      --color-selected-answer: #306061;
       --color-selected-memo: #30613b;
       --grid-border-color: var(--color-difficulty3); /* 初期は回答モード */
       --highlight-color-note: rgba(191, 255, 205, 0.2);
-      --highlight-color-answer: rgba(253, 238, 191, 0.2);
+      --highlight-color-answer: rgba(172, 223, 255, 0.2);
     }
     /* タブレット */
     @media screen and (max-width:350px) {
@@ -130,7 +130,7 @@
       border-radius: 50%;
     }
     input:checked + .slider {
-      background-color: var(--color-difficulty3);
+      background-color: var(--color-difficulty1);
     }
     input:checked + .slider:before {
       transform: translateX(24px);
@@ -1196,8 +1196,8 @@
         document.documentElement.style.setProperty('--grid-border-color', "var(--color-selected-memo)");
       } else {
         btn.innerHTML = "<b>Answer(a)</b><br>/Memo(m)";
-        btn.style.backgroundColor = "var(--color-difficulty3)";
-        document.documentElement.style.setProperty('--grid-border-color', "var(--color-difficulty3)");
+        btn.style.backgroundColor = "var(--color-difficulty1)";
+        document.documentElement.style.setProperty('--grid-border-color', "var(--color-difficulty1)");
       }
       btn.classList.add('animate-button');
       setTimeout(() => btn.classList.remove('animate-button'), 1000);
