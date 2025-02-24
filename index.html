@@ -693,7 +693,7 @@
                 }
               }
             }
-            if (candBefore - candAfter == 1) {
+            if (candAfter - candBefore >= 0 && candAfter - candBefore <= 1) {
               cellsToRemove--;
             } else {
               puzzle[r][c] = backup;
