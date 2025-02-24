@@ -7,7 +7,6 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-14717K4QJ1');
   </script>
   <meta charset="UTF-8">
@@ -16,7 +15,9 @@
   <link rel="icon" href="favicon.ico">
   <style>
     /* ---------------------------------------------------
-       ルートのカスタムプロパティ（初期値：スマホ）
+       ルートのカスタムプロパティ
+       ・太い枠色用変数 (--grid-border-color)
+       ・選択セル強調用の薄色 (--highlight-color-note, --highlight-color-answer)
     --------------------------------------------------- */
     :root {
       --font-size-S: 9px;
@@ -40,6 +41,9 @@
       --color-difficulty7: black;
       --color-selected-answer: #ff9100;
       --color-selected-memo: #30613b;
+      --grid-border-color: var(--color-difficulty3); /* 初期は回答モード */
+      --highlight-color-note: rgba(192, 255, 206, 0.2);
+      --highlight-color-answer: rgba(255, 242, 202, 0.2);
     }
     /* タブレット */
     @media screen and (max-width:350px) {
@@ -53,7 +57,7 @@
     @media screen and (min-width:500px) {
       :root {
         --font-size-S: 11px;
-        --font-size-M: 28px;
+        --font-size-M: 24px;
         --font-size-L: 42px;
       }
     }
@@ -90,6 +94,47 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
+    /* ---------------------------------------------------
+       iOS風トグルボタン（デイリーボード用）
+    --------------------------------------------------- */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 54px;
+      height: 30px;
+      vertical-align: middle;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 24px;
+      width: 24px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--color-difficulty3);
+    }
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
     /* ---------------------------------------------------
        ボタン
     --------------------------------------------------- */
@@ -140,6 +185,7 @@
       color: var(--color-text);
     }
     #npGrid td {
+      position: relative; /* ハイライト用疑似要素のため */
       aspect-ratio: 1;
       font-size: var(--font-size-L);
       width: 7vmin;
@@ -147,20 +193,29 @@
       max-width: 50px;
       max-height: 50px;
       border: 1px solid #999;
-      position: relative;
       vertical-align: middle;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    /* 3×3 ブロックごとの太い枠 */
-    #npGrid tr:nth-child(3n+1) td { border-top: 3px solid #333; }
-    #npGrid tr td:nth-child(3n+1) { border-left: 3px solid #333; }
-    #npGrid tr:last-child td { border-bottom: 3px solid #333; }
-    #npGrid tr td:last-child { border-right: 3px solid #333; }
-    
+    /* 3×3 ブロックごとの太い枠：色はCSS変数で動的に変更 */
+    #npGrid tr:nth-child(3n+1) td { border-top: 3px solid var(--grid-border-color); }
+    #npGrid tr td:nth-child(3n+1) { border-left: 3px solid var(--grid-border-color); }
+    #npGrid tr:last-child td { border-bottom: 3px solid var(--grid-border-color); }
+    #npGrid tr td:last-child { border-right: 3px solid var(--grid-border-color); }
+
+    /* ハイライト用：highlighted クラスを持つセルは ::before で上から半透明オーバーレイ */
+    #npGrid td.highlighted::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--cell-highlight-color);
+      pointer-events: none;
+      z-index: 2;
+    }
+
     /* ---------------------------------------------------
        セル内コンテンツ：メイン数字 & メモ
-         ※.main-value はセル全体を埋める（iOS Chrome対策）
+         ※.main-value はセル全体を埋める
     --------------------------------------------------- */
     .cell-content {
       width: 100%;
@@ -201,9 +256,8 @@
     td.answered .main-value {
       background-color: #fff;
     }
-    /* 選択中セル */
+    /* 選択中セル（outlineは updateHighlights() で設定） */
     td.selected {
-      outline: 2px solid var(--color-selected-answer);
       z-index: 1;
     }
     /* 正解時のフラッシュ */
@@ -274,7 +328,7 @@
     }
     @keyframes comboPulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { color: var(--color-plus); }
       to { color: var(--color-text); }
@@ -284,7 +338,7 @@
     }
     @keyframes mistakePulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { color: var(--color-minus); }
       to { color: var(--color-text); }
@@ -294,7 +348,7 @@
     }
     @keyframes correctPulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { color: var(--color-plus); }
       to { color: var(--color-text); }
@@ -302,7 +356,7 @@
     .animate-points { animation: pointsPulse 0.5s ease; }
     @keyframes pointsPulse {
       0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { color: var(--color-plus); }
       to { color: var(--color-text); }
@@ -312,7 +366,7 @@
     }
     @keyframes buttonPulse {
       0% { transform: scale(1); }
-      30% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
     }
     .animate-button-plus {
@@ -320,7 +374,7 @@
     }
     @keyframes buttonPlusPulse {
       0% { transform: scale(1); }
-      33% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { background-color: var(--color-plus); }
       to { background-color: var(--color-button); }
@@ -330,7 +384,7 @@
     }
     @keyframes buttonMinusPulse {
       0% { transform: scale(1); }
-      33% { transform: scale(1.3); }
+      15% { transform: scale(1.3); }
       100% { transform: scale(1); }
       from { background-color: var(--color-minus); }
       to { background-color: var(--color-button); }
@@ -351,7 +405,7 @@
       justify-content: center;
       align-items: center;
       padding: 20px;
-      color:#333
+      color:#333;
     }
     /* Result Card */
     #resultCard {      
@@ -402,10 +456,11 @@
   </style>
 </head>
 <body>
-  <!-- Start Screen: 難易度選択 -->
+  <!-- Start Screen: 難易度選択＋デイリーボードトグル -->
   <div id="startScreen">
     <h1>Number Place</h1>
-    <p style = "font-size: var(--font-size-M);">SELECT DIFFICULTY</p>
+    <p style="font-size: var(--font-size-M);">SELECT DIFFICULTY</p>
+    <!-- 各難易度ボタン -->
     <button id="superEasyBtn" style="background-color: var(--color-difficulty1);">Super Easy 10 (1)</button>
     <button id="easyBtn" style="background-color: var(--color-difficulty2);">Easy 20 (2)</button>
     <button id="mediumBtn" style="background-color: var(--color-difficulty3);">Medium 30 (3)</button>
@@ -413,8 +468,21 @@
     <button id="ultraHardBtn" style="background-color: var(--color-difficulty5);">Ultra Hard 50 (5)</button>
     <button id="extremeHardBtn" style="background-color: var(--color-difficulty6);">Extreme Hard 55 (6)</button>
     <button id="supremeHardBtn" style="background-color: var(--color-difficulty7);">Supreme Hard 60 (7)</button>
+    <!-- デイリーボードトグル（iOS風） -->
+    <div id="dailyBoardToggleContainer" style="margin: 10px;">
+      <label class="switch">
+        <input type="checkbox" id="dailyBoardToggle">
+        <span class="slider round"></span>
+      </label>
+      <span id="dailyBoardLabel" style="font-size: var(--font-size-M); vertical-align: middle;" >DAILY BOARD</span>
+      <span id="todayDate" style="font-size: var(--font-size-M); margin-left: 10px; vertical-align: middle;" ></span>
+    </div>
+    <script>
+      document.getElementById('todayDate').textContent =
+        new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    </script>
   </div>
-  
+
   <!-- Game Screen -->
   <div id="gameScreen" style="display:none;">
     <!-- ステータスライン -->
@@ -422,7 +490,7 @@
       <span id="difficultyDisplay"></span>
       <span id="timeDisplay">00:00</span>
     </div>
-    <!-- np Grid -->
+    <!-- npGrid -->
     <table id="npGrid"></table>
     <!-- Number Buttons -->
     <div id="numberButtons"></div>
@@ -435,10 +503,10 @@
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em; ">Candidates(c)<br>1 pt</button>
-      <button id="modeToggleBtn" style="font-size: 1.0em; "><b>Answer(a)</b><br>/Memo(m)</button>
-      <button id="magickeyBtn" style="font-size: 1.0em; ">Magickey(k)<br>50 pt</button>
-      <button id="giveUpBtn" style="font-size: 1.0em; ">Forfeit<br>(Esc)</button>
+      <button id="highlightBtn" style="font-size: 1.0em;">Candidates(c)<br>1 pt</button>
+      <button id="modeToggleBtn" style="font-size: 1.0em;"><b>Answer(a)</b><br>/Memo(m)</button>
+      <button id="magickeyBtn" style="font-size: 1.0em;">Magickey(k)<br>50 pt</button>
+      <button id="giveUpBtn" style="font-size: 1.0em;">Forfeit<br>(Esc)</button>
     </div>
   </div>
   
@@ -447,7 +515,6 @@
     <div id="resultCard">
       <span id="resultDifficulty"></span>
       <strong>Score </strong><span id="resultScore"></span>
-      <button id="restartBtn">Replay (Esc)</button>
       <!-- Result Stats -->
       <div id="resultStats">
         <span id="resultTime"></span>
@@ -461,6 +528,7 @@
         <h3>Signature</h3>
         <canvas id="signatureCanvas" width="450" height="150"></canvas>
       </div>
+      <button id="restartBtn" style="font-size: var(--font-size-M)">Exit (Esc)</button>
     </div>
   </div>
   
@@ -493,6 +561,27 @@
       extremeHard: { cells: 55, label: "Extreme Hard 55" },
       supremeHard: { cells: 60, label: "Supreme Hard 60" }
     };
+
+    /********************************************
+     * スタート画面の難易度選択ボタン（リファクタリング済み）
+    ********************************************/
+    const difficultyButtons = [
+      { id: 'superEasyBtn', difficulty: 'superEasy' },
+      { id: 'easyBtn', difficulty: 'easy' },
+      { id: 'mediumBtn', difficulty: 'medium' },
+      { id: 'hardBtn', difficulty: 'hard' },
+      { id: 'ultraHardBtn', difficulty: 'ultraHard' },
+      { id: 'extremeHardBtn', difficulty: 'extremeHard' },
+      { id: 'supremeHardBtn', difficulty: 'supremeHard' }
+    ];
+    difficultyButtons.forEach(btn => {
+      document.getElementById(btn.id).addEventListener('click', function(){
+        difficultyColor = this.style.backgroundColor;
+        document.getElementById('startScreen').style.display = "none";
+        document.getElementById('gameScreen').style.display = "block";
+        initGame(btn.difficulty);
+      });
+    });
     
     /********************************************
      * 配列のディープコピー
@@ -502,9 +591,10 @@
     }
     
     /********************************************
-     * 完全盤面の生成（バックトラック）
+     * 完全盤面の生成（バックトラック・シード対応）
+     * randomFn: 乱数関数（通常はMath.random、デイリーボードの場合はseed付き）
     ********************************************/
-    function generateCompleteBoard() {
+    function generateCompleteBoard(randomFn) {
       let board = Array.from({ length: 9 }, () => Array(9).fill(0));
       function isValid(board, r, c, num) {
         for (let i = 0; i < 9; i++) {
@@ -521,7 +611,7 @@
       }
       function shuffle(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
+          const j = Math.floor(randomFn() * (i + 1));
           [arr[i], arr[j]] = [arr[j], arr[i]];
         }
         return arr;
@@ -546,21 +636,79 @@
     }
     
     /********************************************
-     * 与えられた盤面の作成（難易度に応じてセル除去）
+     * シード付き乱数生成器（Linear Congruential Generator）
+    ********************************************/
+    function seededRandom(seed) {
+      let m = 0x80000000; // 2^31
+      let a = 1103515245;
+      let c = 12345;
+      let state = seed;
+      return function() {
+         state = (a * state + c) % m;
+         return state / (m - 1);
+      }
+    }
+    
+    /********************************************
+     * 与えられた盤面の作成（難易度に応じてセル除去＋強制候補ルール）
     ********************************************/
     function createPuzzle(fullBoard, difficulty) {
       let puzzle = deepCopy(fullBoard);
       let cellsToRemove = difficultySettings[difficulty].cells;
       points += Math.round(cellsToRemove/10);
+      let removalAttempts = 0;
+      const threshold = 1000;
       while (cellsToRemove > 0) {
+        if (removalAttempts > threshold) {
+          for (let r = 0; r < 9 && cellsToRemove > 0; r++) {
+            for (let c = 0; c < 9 && cellsToRemove > 0; c++) {
+              if (puzzle[r][c] !== 0) {
+                puzzle[r][c] = 0;
+                cellsToRemove--;
+              }
+            }
+          }
+          break;
+        }
+        removalAttempts++;
         const r = Math.floor(Math.random() * 9);
         const c = Math.floor(Math.random() * 9);
         if (puzzle[r][c] !== 0) {
+          const backup = puzzle[r][c];
           puzzle[r][c] = 0;
-          cellsToRemove--;
+          let forcedExists = false;
+          for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+              if (puzzle[i][j] === 0) {
+                const cand = getCandidatesForPuzzle(puzzle, i, j);
+                if (cand.length === 1) {
+                  forcedExists = true;
+                  break;
+                }
+              }
+            }
+            if (forcedExists) break;
+          }
+          if (forcedExists) {
+            cellsToRemove--;
+          } else {
+            puzzle[r][c] = backup;
+          }
         }
       }
       return puzzle;
+    }
+    
+    // 与えられた盤面 puz に対してセル[r][c]の候補リストを返す
+    function getCandidatesForPuzzle(puz, r, c) {
+      let candidates = [];
+      if (puz[r][c] !== 0) return candidates;
+      for (let num = 1; num <= 9; num++) {
+        if (isValidForCell(puz, r, c, num)) {
+          candidates.push(num);
+        }
+      }
+      return candidates;
     }
     
     /********************************************
@@ -602,6 +750,7 @@
         selectedCell = initCell;
         selectedCell.classList.add('selected');
       }
+      updateHighlights();
     }
     
     /********************************************
@@ -625,14 +774,19 @@
         container.appendChild(btn);
       }
     }
-    
+
     /********************************************
      * セルクリックハンドラ
     ********************************************/
     function onCellClick(e) {
-      if (selectedCell) { selectedCell.classList.remove('selected'); }
+      if (selectedCell) {
+        // 前回選択セルの outline をクリア
+        selectedCell.style.outline = '';
+        selectedCell.classList.remove('selected');
+      }
       selectedCell = e.currentTarget;
       selectedCell.classList.add('selected');
+      updateHighlights();
     }
     
     /********************************************
@@ -666,8 +820,6 @@
           const correctsDisplay = document.getElementById('correctsDisplay');
           correctsDisplay.classList.add('animate-correct');
           setTimeout(() => correctsDisplay.classList.remove('animate-correct'), 500);
-          document.getElementById('comboDisplay').classList.add('animate-combo');
-          setTimeout(() => document.getElementById('comboDisplay').classList.remove('animate-combo'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
           document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>1 pt';
@@ -860,11 +1012,57 @@
     }
     
     /********************************************
+     * 選択セルの行・列・3×3ブロックをハイライト
+     * → npGrid内の各セルに、highlighted クラスを付与し、
+     *    各セルに --cell-highlight-color を設定して疑似要素で上から表示する。
+     *    また、全セルの outline をリセットしてから、選択セルにのみ outline を設定する。
+    ********************************************/
+    function updateHighlights() {
+      // すべてのセルの背景色・outline・ハイライト用クラス・変数をリセット
+      document.querySelectorAll('#npGrid td').forEach(cell => {
+        cell.style.outline = '';
+        cell.classList.remove('highlighted');
+        cell.style.removeProperty('--cell-highlight-color');
+      });
+      if (!selectedCell) return;
+      const selRow = parseInt(selectedCell.dataset.row);
+      const selCol = parseInt(selectedCell.dataset.col);
+      const highlightColor = isNoteMode 
+            ? getComputedStyle(document.documentElement).getPropertyValue('--highlight-color-note')
+            : getComputedStyle(document.documentElement).getPropertyValue('--highlight-color-answer');
+      
+      // 同じ行、列、またはブロックのセルにハイライトクラスと変数を設定
+      document.querySelectorAll('#npGrid td').forEach(cell => {
+        let r = parseInt(cell.dataset.row);
+        let c = parseInt(cell.dataset.col);
+        if (cell === selectedCell) return;
+        if (r === selRow || c === selCol || (Math.floor(r/3) === Math.floor(selRow/3) && Math.floor(c/3) === Math.floor(selCol/3))) {
+          cell.classList.add('highlighted');
+          cell.style.setProperty('--cell-highlight-color', highlightColor, 'important');
+        }
+      });
+      // 選択セルの outline を isNoteMode に応じて設定
+      if (isNoteMode) {
+        selectedCell.style.outline = "2px solid var(--color-selected-memo)";
+      } else {
+        selectedCell.style.outline = "2px solid var(--color-selected-answer)";
+      }
+    }
+    
+    /********************************************
      * ゲーム初期化：盤面生成、各カウントリセット、レンダリング開始
+     * デイリーボードがオンの場合、今日の日付からシードを作成して同じsolutionに
     ********************************************/
     function initGame(difficulty) {
       currentDifficulty = difficulty;
-      solution = generateCompleteBoard();
+      const dailyBoardOn = document.getElementById('dailyBoardToggle').checked;
+      let randomFn = Math.random;
+      if (dailyBoardOn) {
+        const today = new Date();
+        const seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+        randomFn = seededRandom(seed);
+      }
+      solution = generateCompleteBoard(randomFn);
       points = 0;
       mistakeCount = 0;
       correctCount = 0;
@@ -883,51 +1081,7 @@
       isNoteMode = false;
       updateModeButton();
       startTimer();
-    }
-    
-    /********************************************
-     * 結果表示（Result Overlay）
-    ********************************************/
-    function showResult() {
-      clearInterval(timerInterval);
-      document.getElementById('resultDifficulty').innerHTML =
-        "<span style='color:" + difficultyColor + "'>" + diffText + "</span>";
-      const elapsed = Math.floor((new Date() - startTime) / 1000);
-      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
-      const s = String(elapsed % 60).padStart(2, '0');
-      const score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
-      document.getElementById('resultScore').innerHTML = "<span>" + score + "</span>";
-      const resultStats = document.getElementById('resultStats');
-      resultStats.innerHTML = 
-        "<span>" + m + ":" + s + "</span>" +
-        "<span>" + points + " pt</span>" +
-        "<span>○ " + correctCount + "</span>" +
-        "<span>× " + mistakeCount + "</span>" +
-        "<span>" + comboCount + " combo</span>";
-      document.getElementById('resultScreen').style.display = "flex";
-    }
-    
-    /********************************************
-     * 「Give up」ボタン
-    ********************************************/
-    document.getElementById('giveUpBtn').addEventListener('click', function(){
-      clearInterval(timerInterval);
-      points--;
-      showResult();
-    });
-    
-    /********************************************
-     * 「Replay」ボタン（結果画面→スタート画面）
-    ********************************************/
-    document.getElementById('restartBtn').addEventListener('click', function(){
-      const signatureCanvas = document.getElementById('signatureCanvas');
-      const sigCtx = signatureCanvas.getContext('2d');
-      sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-      document.getElementById('resultScreen').style.display = "none";
-      document.getElementById('gameScreen').style.display = "none";
-      document.getElementById('startScreen').style.display = "flex";
-      document.getElementById('npGrid').innerHTML = "";
-    });
+    }    
     
     /********************************************
      * キーボード入力ハンドリング
@@ -956,12 +1110,14 @@
         }
         if (isNoteMode && e.key.toLowerCase() === "a") { 
           isNoteMode = false; 
-          updateModeButton(); 
+          updateModeButton();
+          updateHighlights();
           return; 
         }
         if (!isNoteMode && e.key.toLowerCase() === "m") { 
           isNoteMode = true; 
-          updateModeButton(); 
+          updateModeButton();
+          updateHighlights();
           return; 
         }
         if (e.key === "Escape") { 
@@ -985,9 +1141,13 @@
         }
         const newCell = document.querySelector(`#npGrid td[data-row="${newR}"][data-col="${newC}"]`);
         if (newCell) {
-          if (selectedCell) selectedCell.classList.remove('selected');
+          if (selectedCell) {
+            selectedCell.style.outline = '';
+            selectedCell.classList.remove('selected');
+          }
           selectedCell = newCell;
           selectedCell.classList.add('selected');
+          updateHighlights();
         }
       }
     });
@@ -996,7 +1156,7 @@
      * 候補ハイライトボタン
     ********************************************/
     document.getElementById('highlightBtn').addEventListener('click', () => {
-      const highlightButton = document.getElementById('highlightBtn')
+      const highlightButton = document.getElementById('highlightBtn');
       if (candidateHighlightLevel < 3 && points >= candidateHighlightLevel+1) {
         candidateHighlightLevel++;
         points -= candidateHighlightLevel;
@@ -1012,24 +1172,27 @@
     });
     
     /********************************************
-     * モード切替ボタン
+     * モード切替ボタン（npGridの太枠色更新と選択セル outline 更新）
     ********************************************/
     document.getElementById('modeToggleBtn').addEventListener('click', function(){
       isNoteMode = !isNoteMode;
       updateModeButton();
-    })
+      updateHighlights();
+    });
     function updateModeButton() {
       const btn = document.getElementById('modeToggleBtn');
       if (isNoteMode) {
         btn.innerHTML = "Answer(a)<br>/<b>Memo(m)</b>";
         btn.style.backgroundColor = "var(--color-selected-memo)";
+        document.documentElement.style.setProperty('--grid-border-color', "var(--color-selected-memo)");
       } else {
         btn.innerHTML = "<b>Answer(a)</b><br>/Memo(m)";
         btn.style.backgroundColor = "var(--color-difficulty3)";
+        document.documentElement.style.setProperty('--grid-border-color', "var(--color-difficulty3)");
       }
       btn.classList.add('animate-button');
       setTimeout(() => btn.classList.remove('animate-button'), 1000);
-    };
+    }
     
     /********************************************
      * 魔法の鍵ボタン
@@ -1037,7 +1200,7 @@
     document.getElementById('magickeyBtn').addEventListener('click', () => {
       const r = parseInt(selectedCell.dataset.row);
       const c = parseInt(selectedCell.dataset.col);
-      const magickeyButton = document.getElementById('magickeyBtn')
+      const magickeyButton = document.getElementById('magickeyBtn');
       if (isNoteMode || board[r][c] !== 0 || points < 50) {
         magickeyButton.classList.add('animate-button-minus');
         setTimeout(() => magickeyButton.classList.remove('animate-button-minus'), 1000);
@@ -1052,25 +1215,51 @@
     });
 
     /********************************************
-     * スタート画面の難易度選択ボタン（リファクタリング済み）
+     * 「Give up」ボタン
     ********************************************/
-    const difficultyButtons = [
-      { id: 'superEasyBtn', difficulty: 'superEasy' },
-      { id: 'easyBtn', difficulty: 'easy' },
-      { id: 'mediumBtn', difficulty: 'medium' },
-      { id: 'hardBtn', difficulty: 'hard' },
-      { id: 'ultraHardBtn', difficulty: 'ultraHard' },
-      { id: 'extremeHardBtn', difficulty: 'extremeHard' },
-      { id: 'supremeHardBtn', difficulty: 'supremeHard' }
-    ];
-    difficultyButtons.forEach(btn => {
-      document.getElementById(btn.id).addEventListener('click', function(){
-        difficultyColor = this.style.backgroundColor;
-        document.getElementById('startScreen').style.display = "none";
-        document.getElementById('gameScreen').style.display = "block";
-        initGame(btn.difficulty);
-      });
+    document.getElementById('giveUpBtn').addEventListener('click', function(){
+      clearInterval(timerInterval);
+      points--;
+      showResult();
     });
+    
+    /********************************************
+     * 「Replay」ボタン（結果画面→スタート画面）
+    ********************************************/
+    document.getElementById('restartBtn').addEventListener('click', function(){
+      const signatureCanvas = document.getElementById('signatureCanvas');
+      const sigCtx = signatureCanvas.getContext('2d');
+      sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      document.getElementById('resultScreen').style.display = "none";
+      document.getElementById('gameScreen').style.display = "none";
+      document.getElementById('startScreen').style.display = "flex";
+      document.getElementById('npGrid').innerHTML = "";
+    });
+
+    /********************************************
+     * 結果表示（Result Overlay）
+    ********************************************/
+    function showResult() {
+      var dailyBoardOn = document.getElementById('dailyBoardToggle').checked;
+      var displayDiff = dailyBoardOn ? diffText + " (DAILY)" : diffText;
+      clearInterval(timerInterval);
+      const elapsed = Math.floor((new Date() - startTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      const score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
+      var todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      document.getElementById('resultDifficulty').innerHTML =
+        "<span style='color:" + difficultyColor + "'>" + displayDiff + "</span><br><span style='font-size: var(--font-size-M)'>" + todayStr + "</span>";
+      document.getElementById('resultScore').innerHTML = "<span>" + score + "</span>";
+      const resultStats = document.getElementById('resultStats');
+      resultStats.innerHTML = 
+        "<span>" + m + ":" + s + "</span>" +
+        "<span>" + points + " pt</span>" +
+        "<span>○ " + correctCount + "</span>" +
+        "<span>× " + mistakeCount + "</span>" +
+        "<span>" + comboCount + " combo</span>";
+      document.getElementById('resultScreen').style.display = "flex";
+    }
     
     /********************************************
      * Signature Canvas セットアップ（結果画面用）
