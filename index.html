@@ -324,9 +324,9 @@
     #numberButtons {
       aspect-ratio: 9 / 1;
       display: grid;
-      width: 90vmin;
+      width: 90%;
       height: 9vmin;
-      max-width: 486px;
+      max-width: 450px;
       max-height: 50px;
       font-size: var(--font-size-L);
       grid-template-columns: repeat(9, 11%);
@@ -807,8 +807,8 @@
         const btn = document.createElement('button');
         btn.style.fontSize = "var(--font-size-L)";
         btn.style.margin = "2px";
-        btn.style.width = "9vmin";
-        btn.style.height = "9vmin";
+        btn.style.width = "8vmin";
+        btn.style.height = "8vmin";
         btn.style.maxWidth = "48px";
         btn.style.maxHeight = "48px";
         btn.style.padding = "0px";
@@ -854,13 +854,13 @@
       } else {
         // Correct
         if (solution[r][c] === num) {
-          let bonus = getCandidates(r, c).length;
+          let bonusratio = Math.round(((1+getCandidates(r, c).length)/2)*10)/10;
           board[r][c] = num;
           mainValueElem.textContent = num;
           selectedCell.classList.add('correct', 'answered');
           comboCount++;
-          points += bonus * comboCount;
-          showPointBonus(bonus * comboCount);
+          points += Math.round(comboCount * bonusratio);
+          showPointBonus(bonusratio);
           correctCount++;
           const correctsDisplay = document.getElementById('correctsDisplay');
           correctsDisplay.classList.add('animate-correct');
@@ -1040,13 +1040,12 @@
     /********************************************
      * ポイントボーナスのアニメーション表示（pointsDisplay 上部）
     ********************************************/
-    function showPointBonus(bonus) {
-      if (bonus <= 0) return;
+    function showPointBonus(ratio) {
+      if (ratio <= 0) return;
       const bonusElem = document.createElement('span');
-      bonusElem.textContent = " + " + bonus + " pt";
+      bonusElem.innerHTML = " + <b>" + comboCount + "</b>×<b>" + ratio + "</b> pt";
       bonusElem.style.color = "var(--color-plus)";
       bonusElem.style.fontSize = "18px";
-      bonusElem.style.fontWeight = "bold";
       bonusElem.style.position = "absolute";
       const pointsDisplay = document.getElementById('pointsDisplay');
       pointsDisplay.classList.add('animate-points');
@@ -1054,14 +1053,14 @@
       const rect = pointsDisplay.getBoundingClientRect();
       bonusElem.style.left = (rect.left + rect.width/2) + "px";
       bonusElem.style.top = (rect.top + 4) + "px";
-      bonusElem.style.transform = "translate(-50%, -110%)";
+      bonusElem.style.transform = "translate(-50%, -105%)";
       document.body.appendChild(bonusElem);
-      bonusElem.style.transition = "opacity 1.5s ease, transform 1.5s ease";
+      bonusElem.style.transition = "opacity 3.0s ease, transform 3.0s ease";
       setTimeout(() => {
         bonusElem.style.opacity = "0";
-        bonusElem.style.transform = "translate(-50%, -150%)";
+        bonusElem.style.transform = "translate(-50%, -125%)";
       }, 100);
-      setTimeout(() => { document.body.removeChild(bonusElem); }, 1600);
+      setTimeout(() => { document.body.removeChild(bonusElem); }, 3000);
       updateStats();
     }
     
