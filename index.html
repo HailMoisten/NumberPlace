@@ -48,7 +48,7 @@
       --samenumhighlight-color-answer: var(--color-difficulty1);
     }
     /* タブレット */
-    @media screen and (max-width:350px) {
+    @media screen and (max-width:390px) {
       :root {
         --font-size-S: 7px;
         --font-size-M: 12px;
@@ -191,14 +191,17 @@
       position: relative; /* ハイライト用疑似要素のため */
       aspect-ratio: 1;
       font-size: var(--font-size-L);
-      width: 46px;
-      height: 46px;
-      max-width: 8vw;
-      max-height: 8vw;
+      width: 7vmin;
+      height: 7vmin;
+      max-width: 46px;
+      max-height: 46px;
       border: 1px solid #999;
       vertical-align: middle;
       cursor: pointer;
       transition: background-color 0.3s ease;
+    }
+    #npGrid tr {
+      height: calc(100% / 9);
     }
     /* 3×3 ブロックごとの太い枠：色はCSS変数で動的に変更 */
     #npGrid tr:nth-child(3n+1) td { border-top: 3px solid var(--grid-border-color); }
