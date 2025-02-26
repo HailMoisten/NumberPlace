@@ -27,9 +27,9 @@
       --color-text-highlight: white;
       --color-button: #555;
       --color-button-hover: #444;
-      --color-cand1: #d4edda;
-      --color-cand2: #fff3cd;
-      --color-cand3: #f8d7da;
+      --color-cand1: #c8ffd0;
+      --color-cand2: #fff2c9;
+      --color-cand3: #ffccd0;
       --color-plus: #438445;
       --color-minus: #FF6600;
       --color-difficulty1: #306061;
@@ -42,8 +42,10 @@
       --color-selected-answer: #306061;
       --color-selected-memo: #30613b;
       --grid-border-color: var(--color-difficulty3); /* 初期は回答モード */
-      --highlight-color-note: rgba(191, 255, 205, 0.2);
-      --highlight-color-answer: rgba(172, 223, 255, 0.2);
+      --highlight-color-note: rgba(200, 255, 212, 0.2);
+      --highlight-color-answer: rgba(192, 231, 255, 0.2);
+      --samenumhighlight-color-note: var(--color-difficulty2);
+      --samenumhighlight-color-answer: var(--color-difficulty1);
     }
     /* タブレット */
     @media screen and (max-width:350px) {
@@ -58,7 +60,7 @@
       :root {
         --font-size-S: 11px;
         --font-size-M: 24px;
-        --font-size-L: 42px;
+        --font-size-L: 40px;
       }
     }
 
@@ -181,18 +183,18 @@
       width: 90%;
       height: 90vmin;
       aspect-ratio: 1;
-      max-width: 450px;
-      max-height: 450px;
+      max-width: 500px;
+      max-height: 500px;
       color: var(--color-text);
     }
     #npGrid td {
       position: relative; /* ハイライト用疑似要素のため */
       aspect-ratio: 1;
       font-size: var(--font-size-L);
-      width: 7vmin;
-      height: 7vmin;
-      max-width: 50px;
-      max-height: 50px;
+      width: 35px;
+      height: 35px;
+      max-width: 8vmin;
+      max-height: 8vmin;
       border: 1px solid #999;
       vertical-align: middle;
       cursor: pointer;
@@ -211,8 +213,33 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background-color: var(--cell-highlight-color);
       pointer-events: none;
+      z-index: 1;
+    }
+    #npGrid td.same-num-highlighted::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--cell-same-num-highlight-color);
+      pointer-events: none;
+      z-index: 3;
+    }
+    #npGrid td.same-num-highlighted .main-value {
+      color: var(--color-text-highlight) !important;
+      background-color: var(--cell-same-num-highlight-color);
+      position: relative;
+      z-index: 3;
+    }
+    /* 追加：extra highlight 用。cell.same-num-extra-highlight の ::after で上から半透明オーバーレイ */
+    #npGrid td.same-num-extra-highlight::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--cell-same-num-highlight-color);
+      opacity: 0.5;
+      pointer-events: none;
       z-index: 2;
     }
+
 
     /* ---------------------------------------------------
        セル内コンテンツ：メイン数字 & メモ
@@ -314,10 +341,9 @@
     --------------------------------------------------- */
     #controls {
       display: flex;
-      justify-content: space-around;
+      justify-content: space-evenly;
       align-items: center;
       max-height: 45px;
-      gap: 10px;
       font-size: var(--font-size-S);
     }
     
@@ -502,12 +528,13 @@
       <span id="correctsDisplay">○ 0</span>
       <span id="mistakesDisplay">× 0</span>
       <span id="comboDisplay">0 combo</span>
+      <span id="scoreDisplay">Score 0</span>
     </div>
     <!-- Controls Panel -->
     <div id="controls">
-      <button id="highlightBtn" style="font-size: 1.0em;">Candidates(c)<br>1 pt</button>
+      <button id="highlightBtn" style="font-size: 1.0em;">Candidates(c)<br><b>1 pt</b></button>
       <button id="modeToggleBtn" style="font-size: 1.0em;"><b>Answer(a)</b><br>/Memo(m)</button>
-      <button id="magickeyBtn" style="font-size: 1.0em;">Magickey(k)<br>50 pt</button>
+      <button id="magickeyBtn" style="font-size: 1.0em;">Magickey(k)<br><b>50 pt</b></button>
       <button id="giveUpBtn" style="font-size: 1.0em;">Forfeit<br>(Esc)</button>
     </div>
   </div>
@@ -546,11 +573,12 @@
     let startTime;            // 開始時刻
     let mistakeCount = 0;     
     let correctCount = 0;     
-    let comboCount = 0;       
+    let comboCount = 0;    
+    let score = 0;
     let currentDifficulty = 'easy';
     let candidateHighlightLevel = 0;  // 0～3
     let isNoteMode = false;   // false: 回答モード, true: メモモード
-    let points = 1;           
+    let points = 1;
     let difficultyColor = "#000"; 
     let diffText = "";
     
@@ -565,7 +593,7 @@
     };
 
     /********************************************
-     * スタート画面の難易度選択ボタン（リファクタリング済み）
+     * スタート画面の難易度選択ボタン
     ********************************************/
     const difficultyButtons = [
       { id: 'superEasyBtn', difficulty: 'superEasy' },
@@ -813,6 +841,7 @@
         }
         updateCellNotes(selectedCell);
       } else {
+        // Correct
         if (solution[r][c] === num) {
           let bonus = getCandidates(r, c).length;
           board[r][c] = num;
@@ -830,20 +859,23 @@
           setTimeout(() => comboDisplay.classList.remove('animate-correct'), 500);
           clearCandidateHighlights();
           candidateHighlightLevel = 0;
-          document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>1 pt';
+          document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>1 pt</b>';
           selectedCell.noteSet.clear();
           notesElem.innerHTML = '';
+          updateTimer();
           updateStats();
           if (isBoardComplete()) {
             clearInterval(timerInterval);
             showResult();
           }
+        // Mistake
         } else {
           mistakeCount++;
           comboCount = 0;
           const mistakesDisplay = document.getElementById('mistakesDisplay');
           mistakesDisplay.classList.add('animate-mistake');
           setTimeout(() => mistakesDisplay.classList.remove('animate-mistake'), 500);
+          updateTimer();
           updateStats();
           selectedCell.classList.add('wrong');
           const candidates = getCandidates(r, c);
@@ -912,8 +944,8 @@
           cell.classList.add('cand' + candidates.length);
         }
       });
-      if (candidateHighlightLevel >= 3) {
-        document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>-' + ' pt';
+      if (candidateHighlightLevel >= 4) {
+        document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>- pt';
       } else {
         document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>' + (candidateHighlightLevel+1) + ' pt</b>';
       }
@@ -959,6 +991,8 @@
       const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const s = String(elapsed % 60).padStart(2, '0');
       document.getElementById('timeDisplay').textContent = m + ':' + s;
+      score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
+      document.getElementById('scoreDisplay').textContent = "Score " + String(score).padStart(3, '0');
     }
     
     /********************************************
@@ -989,6 +1023,7 @@
       document.getElementById('mistakesDisplay').textContent = "× " + mistakeCount;
       document.getElementById('correctsDisplay').textContent = "○ " + correctCount;
       document.getElementById('comboDisplay').textContent = comboCount + " combo";
+      document.getElementById('scoreDisplay').textContent = "Score " + String(score).padStart(3, '0');
     }
     
     /********************************************
@@ -1030,7 +1065,8 @@
       document.querySelectorAll('#npGrid td').forEach(cell => {
         cell.style.outline = '';
         cell.classList.remove('highlighted');
-        cell.style.removeProperty('--cell-highlight-color');
+        cell.classList.remove('same-num-highlighted');
+        cell.classList.remove('same-num-extra-highlight');
       });
       if (!selectedCell) return;
       const selRow = parseInt(selectedCell.dataset.row);
@@ -1038,8 +1074,11 @@
       const highlightColor = isNoteMode 
             ? getComputedStyle(document.documentElement).getPropertyValue('--highlight-color-note')
             : getComputedStyle(document.documentElement).getPropertyValue('--highlight-color-answer');
-      
+      const sameNumHighlightColor = isNoteMode
+            ? getComputedStyle(document.documentElement).getPropertyValue('--color-selected-memo')
+            : getComputedStyle(document.documentElement).getPropertyValue('--color-selected-answer');
       // 同じ行、列、またはブロックのセルにハイライトクラスと変数を設定
+      const selectedNum = board[selRow][selCol];
       document.querySelectorAll('#npGrid td').forEach(cell => {
         let r = parseInt(cell.dataset.row);
         let c = parseInt(cell.dataset.col);
@@ -1049,6 +1088,41 @@
           cell.style.setProperty('--cell-highlight-color', highlightColor, 'important');
         }
       });
+      if (candidateHighlightLevel >= 1 && selectedNum != 0) {
+        // ① 同じ値のセルに same-num-highlighted クラスを付与
+        // ② 同じ値のセルが存在する行・列・ブロックを集める
+        let rowsWithSame = new Set();
+        let colsWithSame = new Set();
+        let blocksWithSame = new Set();
+        rowsWithSame.add(selRow);
+        colsWithSame.add(selCol);
+        blocksWithSame.add(Math.floor(selRow/3)*3 + Math.floor(selCol/3));
+        document.querySelectorAll('#npGrid td').forEach(cell => {
+          if (cell === selectedCell) return;
+          let r = parseInt(cell.dataset.row);
+          let c = parseInt(cell.dataset.col);
+          if (board[r][c] == selectedNum) {
+            cell.classList.add('same-num-highlighted');
+            cell.style.setProperty('--cell-same-num-highlight-color', sameNumHighlightColor, 'important');
+            rowsWithSame.add(r);
+            colsWithSame.add(c);
+            blocksWithSame.add(Math.floor(r/3)*3 + Math.floor(c/3));
+          }
+        });
+        // ③ 上記に含まれる行・列・ブロックの全セルに extra highlight を付与
+        if (candidateHighlightLevel >= 4 && selectedNum != 0) {
+          document.querySelectorAll('#npGrid td').forEach(cell => {
+            if (cell === selectedCell) return;
+            let r = parseInt(cell.dataset.row);
+            let c = parseInt(cell.dataset.col);
+            let block = Math.floor(r/3)*3 + Math.floor(c/3);
+            if (rowsWithSame.has(r) || colsWithSame.has(c) || blocksWithSame.has(block)) {
+              cell.classList.add('same-num-extra-highlight');
+              cell.style.setProperty('--cell-same-num-highlight-color', sameNumHighlightColor, 'important');
+            }
+          });
+        }
+      }
       // 選択セルの outline を isNoteMode に応じて設定
       if (isNoteMode) {
         selectedCell.style.outline = "2px solid var(--color-selected-memo)";
@@ -1075,6 +1149,7 @@
       mistakeCount = 0;
       correctCount = 0;
       comboCount = 0;
+      score = 0;
       givenPuzzle = createPuzzle(solution, difficulty);
       board = deepCopy(givenPuzzle);
       candidateHighlightLevel = 0;
@@ -1083,7 +1158,7 @@
       var displayDiff = dailyBoardOn ? diffText + " (DAILY)" : diffText;
       document.getElementById('difficultyDisplay').innerHTML =
         "<span style='color:" + difficultyColor + "'>" + displayDiff + "</span>";
-      document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br>1 pt';
+      document.getElementById('highlightBtn').innerHTML = 'Candidates(c)<br><b>1 pt</b>';
       renderGrid();
       renderNumberButtons();
       clearCandidateHighlights();
@@ -1166,12 +1241,13 @@
     ********************************************/
     document.getElementById('highlightBtn').addEventListener('click', () => {
       const highlightButton = document.getElementById('highlightBtn');
-      if (candidateHighlightLevel < 3 && points >= candidateHighlightLevel+1) {
+      if (candidateHighlightLevel < 4 && points >= candidateHighlightLevel+1) {
         candidateHighlightLevel++;
         points -= candidateHighlightLevel;
         highlightButton.classList.add('animate-button-plus');
         setTimeout(() => highlightButton.classList.remove('animate-button-plus'), 1000);
         updateCandidateHighlights();
+        updateHighlights();
         updateStats();
       }
       else {
@@ -1196,9 +1272,15 @@
         document.documentElement.style.setProperty('--grid-border-color', "var(--color-selected-memo)");
       } else {
         btn.innerHTML = "<b>Answer(a)</b><br>/Memo(m)";
-        btn.style.backgroundColor = "var(--color-difficulty1)";
-        document.documentElement.style.setProperty('--grid-border-color', "var(--color-difficulty1)");
+        btn.style.backgroundColor = "var(--color-selected-answer)";
+        document.documentElement.style.setProperty('--grid-border-color', "var(--color-selected-answer)");
       }
+      const nbtns = document.querySelectorAll('#numberButtons button');
+      const newColor = isNoteMode ? "var(--color-selected-memo)" : "var(--color-selected-answer)";
+      nbtns.forEach(btn => {
+        btn.style.backgroundColor = newColor;
+      });
+
       btn.classList.add('animate-button');
       setTimeout(() => btn.classList.remove('animate-button'), 1000);
     }
@@ -1255,7 +1337,7 @@
       const elapsed = Math.floor((new Date() - startTime) / 1000);
       const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const s = String(elapsed % 60).padStart(2, '0');
-      const score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
+      score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
       var todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
       document.getElementById('resultDifficulty').innerHTML =
         "<span style='color:" + difficultyColor + "'>" + displayDiff + "</span><br><span style='font-size: var(--font-size-M)'>" + todayStr + "</span>";
