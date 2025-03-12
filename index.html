@@ -639,12 +639,14 @@
     let correctCount = 0;     
     let comboCount = 0;    
     let score = 0;
+    let startScore = 0;
     let currentDifficulty = 'easy';
     let candidateHighlightLevel = 0;  // 0～3
     let isNoteMode = false;   // false: 回答モード, true: メモモード
     let points = 1;
     let difficultyColor = "#000"; 
     let diffText = "";
+    let gaveup = false;
     const PASSMARK = 100;
     
     const difficultySettings = {
@@ -725,7 +727,7 @@
     }
 
 
-    // ★ 追加: スタート画面のscoreButtonクリック時にお祝いアニメーションを表示する処理
+    // スタート画面のscoreButtonクリック時にお祝いアニメーションを表示する処理
     document.querySelectorAll('.scoreButton').forEach(btn => {
       btn.addEventListener('click', function(e) {
         // scoreButtonの内容がある＝scoreが100以上の場合
@@ -811,7 +813,8 @@
     function createPuzzle(fullBoard, difficulty) {
       let puzzle = deepCopy(fullBoard);
       let cellsToRemove = difficultySettings[difficulty].cells;
-      points += Math.round(cellsToRemove/10);
+      startScore = Math.round(cellsToRemove/10);
+      points = startScore;
       let removalAttempts = 0;
       const threshold = 100;
       while (cellsToRemove > 0) {
@@ -1275,6 +1278,7 @@
       correctCount = 0;
       comboCount = 0;
       score = 0;
+      gaveup = false;
       givenPuzzle = createPuzzle(solution, difficulty);
       board = deepCopy(givenPuzzle);
       candidateHighlightLevel = 0;
@@ -1435,7 +1439,9 @@
     ********************************************/
     document.getElementById('giveUpBtn').addEventListener('click', function(){
       clearInterval(timerInterval);
-      points--;
+      gaveup = true;
+      points -= startScore;
+      updateStats();
       showResult();
     });
     
@@ -1467,18 +1473,21 @@
       score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
       var todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-      let key = "np_score_" + currentDifficulty;
-      let stored = localStorage.getItem(key);
-      let update = false;
-      if (stored) {
-        let data = JSON.parse(stored);
-        if (score > data.score) { update = true; }
-      } else {
-        update = true;
-      }
-      if (update) {
-        let data = { score: score, date: todayStr };
-        localStorage.setItem(key, JSON.stringify(data));
+      // Giveupでないときのみスコアを保存
+      if (!gaveup) {
+        let key = "np_score_" + currentDifficulty;
+        let stored = localStorage.getItem(key);
+        let update = false;
+        if (stored) {
+          let data = JSON.parse(stored);
+          if (score > data.score) { update = true; }
+        } else {
+          update = true;
+        }
+        if (update) {
+          let data = { score: score, date: todayStr };
+          localStorage.setItem(key, JSON.stringify(data));
+        }
       }
 
       document.getElementById('resultDifficulty').innerHTML =
