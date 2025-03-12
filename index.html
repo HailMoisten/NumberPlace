@@ -165,6 +165,38 @@
       background-color: var(--color-button-hover);
       transform: scale(1.05);
     }
+    .difficulty-pair {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .difficulty-pair button {
+      margin-right: 0px;
+    }
+    .scoreButton {
+      background-color: transparent;
+      border: none;
+      font-size: var(--font-size-S);
+    }
+    .scoreButton:hover {
+      background-color: transparent;
+      transform: scale(1.30);
+    }
+    /* Confetti（クラッカー）アニメーション用 */
+    @keyframes confetti {
+      from { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      to { transform: translate(var(--dx), var(--dy)) rotate(360deg); opacity: 0; }
+    }
+    .confetti {
+      position: fixed;
+      width: 6px;
+      height: 4px;
+      background-color: currentColor;
+      pointer-events: none;
+      z-index: 1000;
+      animation: confetti 1.0s forwards ease;
+    }
+
     
     /* ---------------------------------------------------
        上部ステータスライン：難易度とタイマー
@@ -498,14 +530,35 @@
   <div id="startScreen">
     <h1>Number Place</h1>
     <p style="font-size: var(--font-size-M);">SELECT DIFFICULTY</p>
-    <!-- 各難易度ボタン -->
-    <button id="superEasyBtn" style="background-color: var(--color-difficulty1);">SUPER EASY 10 (1)</button>
-    <button id="easyBtn" style="background-color: var(--color-difficulty2);">EASY 20 (2)</button>
-    <button id="mediumBtn" style="background-color: var(--color-difficulty3);">MEDIUM 30 (3)</button>
-    <button id="hardBtn" style="background-color: var(--color-difficulty4);">HARD 40 (4)</button>
-    <button id="ultraHardBtn" style="background-color: var(--color-difficulty5);">ULTRA HARD 50 (5)</button>
-    <button id="extremeHardBtn" style="background-color: var(--color-difficulty6);">EXTREME HARD 55 (6)</button>
-    <button id="supremeHardBtn" style="background-color: var(--color-difficulty7);">SUPREME HARD 60 (7)</button>
+    <!-- 各難易度ボタンとスコアボタンのペア（横並び） -->
+    <div class="difficulty-pair">
+      <button id="superEasyBtn" style="background-color: var(--color-difficulty1);">SUPER EASY 10 (1)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="easyBtn" style="background-color: var(--color-difficulty2);">EASY 20 (2)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="mediumBtn" style="background-color: var(--color-difficulty3);">MEDIUM 30 (3)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="hardBtn" style="background-color: var(--color-difficulty4);">HARD 40 (4)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="ultraHardBtn" style="background-color: var(--color-difficulty5);">ULTRA HARD 50 (5)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="extremeHardBtn" style="background-color: var(--color-difficulty6);">EXTREME HARD 55 (6)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
+    <div class="difficulty-pair">
+      <button id="supremeHardBtn" style="background-color: var(--color-difficulty7);">SUPREME HARD 60 (7)</button>
+      <button class="scoreButton" data-score-button="true"></button>
+    </div>
     <!-- デイリーボードトグル（iOS風） -->
     <div id="dailyBoardToggleContainer" style="margin: 10px;">
       <label class="switch">
@@ -592,6 +645,7 @@
     let points = 1;
     let difficultyColor = "#000"; 
     let diffText = "";
+    const PASSMARK = 100;
     
     const difficultySettings = {
       superEasy: { cells: 10, label: "SUPER EASY 10" },
@@ -623,7 +677,68 @@
         initGame(btn.difficulty);
       });
     });
+
+    /********************************************
+     * 各難易度ボタンの隣に、キャッシュ済み（高スコア）のスコアと獲得日を表示する関数
+    ********************************************/
+    function updateDifficultyButtons() {
+      difficultyButtons.forEach(btn => {
+        let key = "np_score_" + btn.difficulty;
+        let stored = localStorage.getItem(key);
+        let scoreButton = document.getElementById(btn.id).nextElementSibling; // 既にHTMLに用意したscoreButton
+        if (stored) {
+          let data = JSON.parse(stored);
+          if (data.score >= PASSMARK) {
+            scoreButton.innerHTML = "<b>✓ " + data.score + "</b><br>" + data.date;
+            scoreButton.style.color = document.getElementById(btn.id).style.backgroundColor;
+          } else {
+            scoreButton.innerHTML = "";
+          }
+        } else {
+          scoreButton.innerHTML = "";
+        }
+      });
+    }
+    // ページ読み込み時に難易度ボタンのキャッシュ表示を更新
+    window.addEventListener('load', updateDifficultyButtons);
     
+    // ★ お祝いアニメーション（confetti）を生成する関数
+    function showConfetti(x, y, color) {
+      const numPieces = 20; // 発生させるconfettiの個数
+      for (let i = 0; i < numPieces; i++) {
+        const confetti = document.createElement('div');
+        confetti.classList.add('confetti');
+        // ランダムな移動量（横: -150～+150px、縦: -50～-350px上方向）
+        const dx = (Math.random() - 0.5) * 400;
+        const dy = (Math.random() * -200) - 100;
+        confetti.style.setProperty('--dx', dx + 'px');
+        confetti.style.setProperty('--dy', dy + 'px');
+        // ★ 変更: confettiの色を引数のcolorに固定
+        confetti.style.backgroundColor = color;
+        // クリック位置に配置
+        confetti.style.left = x + 'px';
+        confetti.style.top = y + 'px';
+        document.body.appendChild(confetti);
+        // アニメーション終了後に要素を削除
+        setTimeout(() => { confetti.remove(); }, 1000);
+      }
+    }
+
+
+    // ★ 追加: スタート画面のscoreButtonクリック時にお祝いアニメーションを表示する処理
+    document.querySelectorAll('.scoreButton').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        // scoreButtonの内容がある＝scoreが100以上の場合
+        if (btn.innerHTML.trim() !== "") {
+          const rect = btn.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          showConfetti(x, y, btn.style.color);
+        }
+      });
+    });
+
+
     /********************************************
      * 配列のディープコピー
     ********************************************/
@@ -1335,6 +1450,8 @@
       document.getElementById('gameScreen').style.display = "none";
       document.getElementById('startScreen').style.display = "flex";
       document.getElementById('npGrid').innerHTML = "";
+      // スタート画面の難易度ボタン更新
+      updateDifficultyButtons();
     });
 
     /********************************************
@@ -1349,6 +1466,24 @@
       const s = String(elapsed % 60).padStart(2, '0');
       score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
       var todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+      // スコアがPASSMARK以上の場合、キャッシュに保存／更新
+      if (score >= PASSMARK) {
+        let key = "np_score_" + currentDifficulty;
+        let stored = localStorage.getItem(key);
+        let update = false;
+        if (stored) {
+          let data = JSON.parse(stored);
+          if (score > data.score) { update = true; }
+        } else {
+          update = true;
+        }
+        if (update) {
+          let data = { score: score, date: todayStr };
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+      }
+
       document.getElementById('resultDifficulty').innerHTML =
         "<span style='color:" + difficultyColor + "'>" + displayDiff + "</span><br><span style='font-size: var(--font-size-M)'>" + todayStr + "</span>";
       document.getElementById('resultScore').innerHTML = "<span>" + score + "</span>";
