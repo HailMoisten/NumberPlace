@@ -688,11 +688,11 @@
         let scoreButton = document.getElementById(btn.id).nextElementSibling; // 既にHTMLに用意したscoreButton
         if (stored) {
           let data = JSON.parse(stored);
+          scoreButton.style.color = document.getElementById(btn.id).style.backgroundColor;
           if (data.score >= PASSMARK) {
             scoreButton.innerHTML = "<b>✓ " + data.score + "</b><br>" + data.date;
-            scoreButton.style.color = document.getElementById(btn.id).style.backgroundColor;
           } else {
-            scoreButton.innerHTML = "";
+            scoreButton.innerHTML = data.score + "<br>" + data.date;
           }
         } else {
           scoreButton.innerHTML = "";
@@ -729,7 +729,7 @@
     document.querySelectorAll('.scoreButton').forEach(btn => {
       btn.addEventListener('click', function(e) {
         // scoreButtonの内容がある＝scoreが100以上の場合
-        if (btn.innerHTML.trim() !== "") {
+        if (btn.innerHTML.trim().includes('✓')) {
           const rect = btn.getBoundingClientRect();
           const x = rect.left + rect.width / 2;
           const y = rect.top + rect.height / 2;
@@ -1467,21 +1467,18 @@
       score = Math.round(points * 60 / ((Math.floor(elapsed / 60) * 60 + (Math.floor(elapsed % 60)) ) || 1) * (1 - (mistakeCount / (correctCount || 1))));
       var todayStr = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
-      // スコアがPASSMARK以上の場合、キャッシュに保存／更新
-      if (score >= PASSMARK) {
-        let key = "np_score_" + currentDifficulty;
-        let stored = localStorage.getItem(key);
-        let update = false;
-        if (stored) {
-          let data = JSON.parse(stored);
-          if (score > data.score) { update = true; }
-        } else {
-          update = true;
-        }
-        if (update) {
-          let data = { score: score, date: todayStr };
-          localStorage.setItem(key, JSON.stringify(data));
-        }
+      let key = "np_score_" + currentDifficulty;
+      let stored = localStorage.getItem(key);
+      let update = false;
+      if (stored) {
+        let data = JSON.parse(stored);
+        if (score > data.score) { update = true; }
+      } else {
+        update = true;
+      }
+      if (update) {
+        let data = { score: score, date: todayStr };
+        localStorage.setItem(key, JSON.stringify(data));
       }
 
       document.getElementById('resultDifficulty').innerHTML =
