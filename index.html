@@ -184,14 +184,14 @@
     }
     /* Confetti（クラッカー）アニメーション用 */
     @keyframes confetti {
-      from { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-      to { transform: translate(var(--dx), var(--dy)) rotate(360deg); opacity: 0; }
+      from { transform: translate(0, 0) rotate(0deg); opacity: 1.0; }
+      to { transform: translate(var(--dx), var(--dy)) rotate(360deg); opacity: 0.0; }
     }
     .confetti {
       position: fixed;
       width: 6px;
       height: 4px;
-      background-color: currentColor;
+      background-color: var(--confetti-color, var(--color-difficulty1));
       pointer-events: none;
       z-index: 1000;
       animation: confetti 1.0s forwards ease;
@@ -572,7 +572,8 @@
       document.getElementById('todayDate').textContent =
         " of " + new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
     </script>
-    <aside>ver.2025.2.26 <a href="https://github.com/HailMoisten/NumberPlace" target="_blank">GitHub</a><br>GPL-3.0 license © 2025 Hail Moisten</aside>
+    <button id="clearCacheBtn" style="font-size: var(--font-size-S); ">Clear local cash</button>
+    <aside>ver.2025.3.13 <a href="https://github.com/HailMoisten/NumberPlace" target="_blank">GitHub</a><br>GPL-3.0 license © 2025 Hail Moisten</aside>
   </div>
 
   <!-- Game Screen -->
@@ -690,7 +691,7 @@
         let scoreButton = document.getElementById(btn.id).nextElementSibling; // 既にHTMLに用意したscoreButton
         if (stored) {
           let data = JSON.parse(stored);
-          scoreButton.style.color = document.getElementById(btn.id).style.backgroundColor;
+          scoreButton.style.color = getComputedStyle(document.getElementById(btn.id)).backgroundColor;
           if (data.score >= PASSMARK) {
             scoreButton.innerHTML = "<b>✓ " + data.score + "</b><br>" + data.date;
           } else {
@@ -701,6 +702,7 @@
         }
       });
     }
+    updateDifficultyButtons();
     // ページ読み込み時に難易度ボタンのキャッシュ表示を更新
     window.addEventListener('load', updateDifficultyButtons);
     
@@ -715,8 +717,10 @@
         const dy = (Math.random() * -200) - 100;
         confetti.style.setProperty('--dx', dx + 'px');
         confetti.style.setProperty('--dy', dy + 'px');
-        // ★ 変更: confettiの色を引数のcolorに固定
-        confetti.style.backgroundColor = color;
+        // confettiの色には引数のcolorを元にした明るい色に
+        // カスタムプロパティ --confetti-color を設定することで、CSS側の背景色を上書き
+        confetti.style.setProperty('--confetti-color', getModifiedConfettiColor(color));
+        // confetti.style.setProperty('--confetti-color', color);
         // クリック位置に配置
         confetti.style.left = x + 'px';
         confetti.style.top = y + 'px';
@@ -725,20 +729,45 @@
         setTimeout(() => { confetti.remove(); }, 1000);
       }
     }
-
-
+    
+    function getModifiedConfettiColor(color) {
+      // color は "rgb(r, g, b)" の形式を想定
+      const matches = color.match(/(\d+),\s*(\d+),\s*(\d+)/);
+      if (!matches) return color; // 期待した形式でない場合はそのまま返す
+      let r = parseInt(matches[1]);
+      let g = parseInt(matches[2]);
+      let b = parseInt(matches[3]);
+      // 0.3～0.9 のランダムな係数で各成分を255に近づける
+      const factor = Math.random() * 0.7 + 0.2;
+      r = Math.min(255, Math.round(r + (255 - r) * factor));
+      g = Math.min(255, Math.round(g + (255 - g) * factor));
+      b = Math.min(255, Math.round(b + (255 - b) * factor));
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+    
     // スタート画面のscoreButtonクリック時にお祝いアニメーションを表示する処理
     document.querySelectorAll('.scoreButton').forEach(btn => {
       btn.addEventListener('click', function(e) {
-        // scoreButtonの内容がある＝scoreが100以上の場合
+        // scoreButtonに✓がついている＝scoreが100以上の場合
         if (btn.innerHTML.trim().includes('✓')) {
           const rect = btn.getBoundingClientRect();
           const x = rect.left + rect.width / 2;
           const y = rect.top + rect.height / 2;
-          showConfetti(x, y, btn.style.color);
-        }
+          showConfetti(x, y, getComputedStyle(btn).color);        }
       });
     });
+
+    // キャッシュクリアボタンのクリックイベント
+    document.getElementById('clearCacheBtn').addEventListener('click', function(){
+      if (confirm("Are you sure? Clear or Cancel")) {
+        const difficulties = ["superEasy", "easy", "medium", "hard", "ultraHard", "extremeHard", "supremeHard"];
+        difficulties.forEach(difficulty => {
+          localStorage.removeItem("np_score_" + difficulty);
+        });
+        updateDifficultyButtons();  // 難易度ボタンのスコア表示を更新
+      }
+    });
+
 
 
     /********************************************
